@@ -1,0 +1,175 @@
+{% extends "core/base.html" %}
+
+{% block title %}Mock Tests — PESU Nexus{% endblock %}
+{% block nav_mocktests %}active{% endblock %}
+
+{% block extra_style %}
+.centered-form-wrap {
+    max-width: 520px;
+    margin: 0 auto;
+}
+.form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 36px 32px;
+    position: relative;
+    overflow: hidden;
+}
+.form-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(62,229,176,0.25), transparent);
+}
+.form-section-label {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 22px;
+    display: flex; align-items: center; gap: 8px;
+}
+.form-section-label::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: var(--border);
+}
+.form-group { margin-bottom: 22px; }
+.form-group label {
+    display: block;
+    font-size: 11.5px; font-weight: 600;
+    color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 0.09em;
+    margin-bottom: 9px;
+}
+.form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    background: #090e18;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237d8fa8' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 38px;
+}
+.form-group select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(62,229,176,0.12);
+}
+.form-group select option {
+    background: #0e1420;
+}
+.submit-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 13px 20px;
+    margin-top: 6px;
+    border: none; border-radius: 999px;
+    background: var(--accent); color: #04120d;
+    font-size: 14px; font-weight: 700;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+}
+.submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 24px rgba(62,229,176,0.4);
+}
+.tip-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 24px;
+    padding: 14px 16px;
+    background: rgba(62,229,176,0.05);
+    border: 1px solid rgba(62,229,176,0.12);
+    border-radius: 10px;
+    font-size: 12.5px; color: var(--text-2); line-height: 1.5;
+}
+.tip-icon {
+    color: var(--accent);
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span> Mock Tests
+        </div>
+
+        <div class="page-title">Mock Tests</div>
+
+        <div class="page-subtitle">
+            Select your semester and course to find available tests
+        </div>
+    </div>
+</div>
+
+<div class="centered-form-wrap">
+    <div class="form-card">
+
+        <div class="form-section-label">Test Filter</div>
+
+        <form method="POST" action="{% url 'mocktests:test_selection' %}">
+            {% csrf_token %}
+
+            <!-- Semester -->
+            <div class="form-group">
+                <label for="semester">Semester</label>
+
+                <select name="semester" id="semester">
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                    <option value="3">Semester 3</option>
+                </select>
+            </div>
+
+            <!-- Course -->
+            <div class="form-group">
+                <label for="course">Course</label>
+
+                <select name="course" id="course">
+
+                    {% if courses %}
+                        {% for course in courses %}
+                            <option value="{{ course }}">
+                                {{ course }}
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="" disabled selected>
+                            No courses available
+                        </option>
+                    {% endif %}
+
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Find Tests →
+            </button>
+
+        </form>
+
+        <div class="tip-row">
+            <span class="tip-icon">◈</span>
+
+            <span>
+                Tests are timed. Once you begin, your attempt is recorded
+                even if you navigate away. Make sure you're ready before
+                starting.
+            </span>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

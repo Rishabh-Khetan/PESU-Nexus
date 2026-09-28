@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}PESU Nexus{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+        :root {
+            --bg: #070a10;
+            --bg-2: #0b0f18;
+            --surface: #0e1420;
+            --surface-2: #111827;
+
+            --border: #1c2535;
+            --border-2: #263040;
+
+            --text: #e2e8f4;
+            --text-2: #7d8fa8;
+            --text-3: #4a5568;
+
+            --accent: #3ee5b0;
+            --red: #f87171;
+            --yellow: #f5c542;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+
+            --sans: "Inter", sans-serif;
+            --mono: "JetBrains Mono", "Fira Code", monospace;
+
+            --sidebar-width: 250px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(
+                    circle at 20% 20%,
+                    rgba(62, 229, 176, 0.04),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 80% 80%,
+                    rgba(96, 165, 250, 0.03),
+                    transparent 30%
+                ),
+                var(--bg);
+
+            color: var(--text);
+            font-family: "Inter", sans-serif;
+            overflow-x: hidden;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font-family: inherit;
+        }
+
+        /* =========================
+           Cursor Light
+        ========================= */
+
+        #cursor-light {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(62, 229, 176, 0.08) 0%,
+                    rgba(62, 229, 176, 0.03) 35%,
+                    transparent 70%
+                );
+
+            transform: translate(-50%, -50%);
+            transition:
+                left 0.08s ease-out,
+                top 0.08s ease-out;
+        }
+
+        /* =========================
+           Layout
+        ========================= */
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           Sidebar
+        ========================= */
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+
+            width: var(--sidebar-width);
+            height: 100vh;
+
+            padding: 28px 18px;
+
+            background: rgba(11, 15, 24, 0.96);
+            border-right: 1px solid var(--border);
+
+            display: flex;
+            flex-direction: column;
+
+            z-index: 1000;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            padding: 0 10px;
+            margin-bottom: 38px;
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border: 1px solid rgba(62, 229, 176, 0.5);
+            border-radius: 8px;
+
+            color: var(--accent);
+            font-size: 14px;
+            font-weight: 800;
+
+            background: rgba(62, 229, 176, 0.05);
+            box-shadow: 0 0 18px rgba(62, 229, 176, 0.08);
+        }
+
+        .brand-name {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-name span {
+            color: var(--accent);
+        }
+
+        /* =========================
+           Navigation
+        ========================= */
+
+        .nav-section {
+            margin-bottom: 28px;
+        }
+
+        .nav-label {
+            padding: 0 11px;
+            margin-bottom: 9px;
+
+            color: var(--text-3);
+
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            padding: 10px 11px;
+            margin-bottom: 3px;
+
+            color: var(--text-2);
+
+            border: 1px solid transparent;
+            border-radius: 8px;
+
+            font-size: 13px;
+            font-weight: 500;
+
+            transition:
+                color 0.2s ease,
+                background 0.2s ease,
+                border-color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .nav-item:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.025);
+            border-color: var(--border);
+            transform: translateX(2px);
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+            background: rgba(62, 229, 176, 0.06);
+            border-color: rgba(62, 229, 176, 0.12);
+        }
+
+        .nav-icon {
+            width: 18px;
+            text-align: center;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* =========================
+           Logout Button (styled like nav-item)
+        ========================= */
+
+        .logout-btn {
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-2);
+        }
+
+        .logout-btn:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.025);
+            border-color: var(--border);
+            transform: translateX(2px);
+        }
+
+        /* =========================
+           Sidebar Bottom
+        ========================= */
+
+        .sidebar-bottom {
+            margin-top: auto;
+        }
+
+        .user-box {
+            padding: 12px;
+            margin-bottom: 8px;
+
+            border: 1px solid var(--border);
+            border-radius: 9px;
+
+            background: rgba(255, 255, 255, 0.015);
+        }
+
+        .user-label {
+            margin-bottom: 4px;
+
+            color: var(--text-3);
+
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .user-name {
+            overflow: hidden;
+
+            color: var(--text);
+
+            font-size: 12px;
+            font-weight: 600;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* =========================
+           Main Content
+        ========================= */
+
+        .main-content {
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+
+            margin-left: var(--sidebar-width);
+            padding: 38px 42px;
+        }
+
+        .content-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* =========================
+           Page Header
+        ========================= */
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .mono-label {
+            display: inline-block;
+
+            margin-bottom: 9px;
+
+            color: var(--accent);
+
+            font-family: monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+        }
+
+        .page-title {
+            margin-bottom: 8px;
+
+            color: var(--text);
+
+            font-size: clamp(25px, 3vw, 34px);
+            font-weight: 800;
+            letter-spacing: -0.04em;
+        }
+
+        .page-subtitle {
+            max-width: 680px;
+
+            color: var(--text-2);
+
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* =========================
+           Cards
+        ========================= */
+
+        .card {
+            position: relative;
+
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            transition:
+                border-color 0.25s ease,
+                transform 0.25s ease,
+                box-shadow 0.25s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-2);
+        }
+
+        .card-shine {
+            overflow: hidden;
+        }
+
+        .card-shine::before {
+            content: "";
+
+            position: absolute;
+            top: 0;
+            left: 0;
+
+            width: 100%;
+            height: 1px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(62, 229, 176, 0.5),
+                    transparent
+                );
+
+            opacity: 0.7;
+        }
+
+        /* =========================
+           Buttons
+        ========================= */
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+
+            padding: 10px 16px;
+
+            border: 1px solid var(--border-2);
+            border-radius: 8px;
+
+            color: var(--text);
+
+            background: var(--surface-2);
+
+            font-size: 12px;
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition:
+                background 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+        }
+
+        .btn-primary {
+            color: #06100d;
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            color: #06100d;
+            background: #55efbf;
+            border-color: #55efbf;
+        }
+
+        /* =========================
+           Badges
+        ========================= */
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+
+            padding: 4px 8px;
+
+            border: 1px solid var(--border);
+            border-radius: 999px;
+
+            color: var(--text-2);
+
+            background: rgba(255, 255, 255, 0.02);
+
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .badge-green {
+            color: var(--accent);
+            border-color: rgba(62, 229, 176, 0.2);
+            background: rgba(62, 229, 176, 0.05);
+        }
+
+        .badge-red {
+            color: var(--red);
+            border-color: rgba(248, 113, 113, 0.2);
+            background: rgba(248, 113, 113, 0.05);
+        }
+
+        .badge-yellow {
+            color: var(--yellow);
+            border-color: rgba(245, 197, 66, 0.2);
+            background: rgba(245, 197, 66, 0.05);
+        }
+
+        .badge-blue {
+            color: var(--blue);
+            border-color: rgba(96, 165, 250, 0.2);
+            background: rgba(96, 165, 250, 0.05);
+        }
+
+        .badge-purple {
+            color: var(--purple);
+            border-color: rgba(167, 139, 250, 0.2);
+            background: rgba(167, 139, 250, 0.05);
+        }
+
+        /* =========================
+           Tables
+        ========================= */
+
+        .table-container {
+            overflow-x: auto;
+
+            border: 1px solid var(--border);
+            border-radius: 12px;
+
+            background: var(--surface);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 13px 16px;
+
+            color: var(--text-3);
+
+            background: rgba(255, 255, 255, 0.015);
+
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-align: left;
+            text-transform: uppercase;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 14px 16px;
+
+            color: var(--text-2);
+
+            font-size: 12px;
+
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.012);
+        }
+
+        /* =========================
+           Forms
+        ========================= */
+
+        label {
+            display: block;
+
+            margin-bottom: 7px;
+
+            color: var(--text-2);
+
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+
+            padding: 11px 12px;
+
+            color: var(--text);
+
+            background: var(--surface-2);
+
+            border: 1px solid var(--border);
+            border-radius: 8px;
+
+            outline: none;
+
+            font-size: 12px;
+
+            transition:
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: rgba(62, 229, 176, 0.5);
+
+            box-shadow:
+                0 0 0 3px rgba(62, 229, 176, 0.06);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* =========================
+           About / Contact Pages
+        ========================= */
+
+        .info-page {
+            width: 100%;
+        }
+
+        .info-hero {
+            max-width: 850px;
+            margin-bottom: 35px;
+        }
+
+        .info-hero h1 {
+            margin-bottom: 12px;
+
+            color: var(--text);
+
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 800;
+            letter-spacing: -0.045em;
+            line-height: 1.1;
+        }
+
+        .info-hero p {
+            max-width: 720px;
+
+            color: var(--text-2);
+
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .info-section {
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+
+        .info-section h2 {
+            margin-bottom: 16px;
+
+            color: var(--text);
+
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .info-section p {
+            max-width: 850px;
+            margin-bottom: 13px;
+
+            color: var(--text-2);
+
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .info-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .info-card {
+            padding: 22px;
+
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+
+            transition:
+                border-color 0.25s ease,
+                transform 0.25s ease,
+                background 0.25s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+
+            background: var(--surface-2);
+            border-color: var(--border-2);
+        }
+
+        .info-card h3 {
+            margin-bottom: 10px;
+
+            color: var(--text);
+
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .info-card p {
+            margin-bottom: 14px;
+
+            color: var(--text-2);
+
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .info-card a,
+        .github-link {
+            display: inline-block;
+
+            color: var(--accent);
+
+            font-size: 12px;
+            font-weight: 600;
+
+            transition:
+                color 0.2s ease,
+                transform 0.2s ease;
+        }
+
+        .info-card a:hover,
+        .github-link:hover {
+            color: #7af5d0;
+            transform: translateX(2px);
+        }
+
+        .github-link {
+            margin-top: 4px;
+        }
+
+        /* =========================
+           Footer
+        ========================= */
+
+        .footer {
+            margin-top: 55px;
+            padding: 20px 0;
+
+            color: var(--text-3);
+
+            border-top: 1px solid var(--border);
+
+            font-size: 10px;
+            line-height: 1.6;
+        }
+
+        /* =========================
+           Scrollbar
+        ========================= */
+
+        ::-webkit-scrollbar {
+            width: 7px;
+            height: 7px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-2);
+            border-radius: 999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-3);
+        }
+
+        /* =========================
+           Responsive
+        ========================= */
+
+        @media (max-width: 900px) {
+            :root {
+                --sidebar-width: 215px;
+            }
+
+            .main-content {
+                padding: 30px 25px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                position: relative;
+
+                width: 100%;
+                height: auto;
+
+                padding: 18px;
+
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .app-layout {
+                display: block;
+            }
+
+            .brand {
+                margin-bottom: 20px;
+            }
+
+            .nav-section {
+                margin-bottom: 15px;
+            }
+
+            .sidebar-bottom {
+                margin-top: 10px;
+            }
+
+            .main-content {
+                width: 100%;
+                margin-left: 0;
+                padding: 25px 18px;
+            }
+
+            .info-section {
+                padding: 21px;
+            }
+        }
+    </style>
+
+    <!-- Page-specific CSS injected here, wrapped in <style> so it always loads -->
+    <style>
+        {% block extra_style %}{% endblock %}
+    </style>
+
+    {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+
+    <div id="cursor-light"></div>
+
+    <div class="app-layout">
+
+        <!-- =========================
+             Sidebar
+        ========================= -->
+
+        <aside class="sidebar">
+
+            <a href="{% url 'core:home' %}" class="brand">
+                <div class="brand-mark">N</div>
+
+                <div class="brand-name">
+                    PESU <span>Nexus</span>
+                </div>
+            </a>
+
+            <nav>
+
+                <div class="nav-section">
+
+                    <div class="nav-label">
+                        Overview
+                    </div>
+
+                    <a
+                        href="{% url 'core:home' %}"
+                        class="nav-item {% block nav_home %}{% endblock %}"
+                    >
+                        <span class="nav-icon">⌂</span>
+                        <span>Dashboard</span>
+                    </a>
+
+                </div>
+
+
+                <div class="nav-section">
+
+                    <div class="nav-label">
+                        Academics
+                    </div>
+
+                    <a
+                        href="{% url 'mocktests:mock_tests' %}"
+                        class="nav-item {% block nav_mocktests %}{% endblock %}"
+                    >
+                        <span class="nav-icon">◈</span>
+                        <span>Mock Tests</span>
+                    </a>
+
+                    <a
+                        href="{% url 'mocktests:attempt_history' %}"
+                        class="nav-item {% block nav_history %}{% endblock %}"
+                    >
+                        <span class="nav-icon">◷</span>
+                        <span>Test History</span>
+                    </a>
+
+                    <a
+                        href="{% url 'materials:semester_list' %}"
+                        class="nav-item {% block nav_materials %}{% endblock %}"
+                    >
+                        <span class="nav-icon">▤</span>
+                        <span>Materials</span>
+                    </a>
+
+                </div>
+
+
+                <div class="nav-section">
+
+                    <div class="nav-label">
+                        PESU Nexus
+                    </div>
+
+                    <a
+                        href="{% url 'core:about' %}"
+                        class="nav-item {% block nav_about %}{% endblock %}"
+                    >
+                        <span class="nav-icon">ⓘ</span>
+                        <span>About</span>
+                    </a>
+
+                    <a
+                        href="{% url 'core:contact' %}"
+                        class="nav-item {% block nav_contact %}{% endblock %}"
+                    >
+                        <span class="nav-icon">✉</span>
+                        <span>Contact</span>
+                    </a>
+
+                </div>
+
+            </nav>
+
+
+            <!-- =========================
+                 Sidebar Bottom
+            ========================= -->
+
+            <div class="sidebar-bottom">
+
+                {% if user.is_authenticated %}
+
+                    <div class="user-box">
+
+                        <div class="user-label">
+                            Signed in as
+                        </div>
+
+                        <div class="user-name">
+                            {{ user.username }}
+                        </div>
+
+                    </div>
+
+                    <form method="POST" action="{% url 'users:logout' %}" style="margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="nav-item logout-btn">
+                            <span class="nav-icon">↪</span>
+                            <span>Logout</span>
+                        </button>
+                    </form>
+
+                {% endif %}
+
+            </div>
+
+        </aside>
+
+
+        <!-- =========================
+             Main Content
+        ========================= -->
+
+        <main class="main-content">
+
+            <div class="content-container">
+
+                {% block content %}
+                {% endblock %}
+
+                <footer class="footer">
+                    PESU Nexus · Built for students at PES University
+                </footer>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <!-- =========================
+         Cursor Light Script
+    ========================= -->
+
+    <script>
+        const cursorLight = document.getElementById("cursor-light");
+
+        document.addEventListener("mousemove", function (event) {
+            cursorLight.style.left = event.clientX + "px";
+            cursorLight.style.top = event.clientY + "px";
+        });
+    </script>
+
+    {% block extra_script %}{% endblock %}
+
+</body>
+</html>

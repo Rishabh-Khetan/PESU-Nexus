@@ -1,0 +1,102 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ course.name }} — Semester {{ semester.number }}{% endblock %}
+{% block nav_materials %}active{% endblock %}
+
+{% block extra_style %}
+.course-wrap { max-width: 680px; }
+
+.subject-list { display: flex; flex-direction: column; gap: 10px; }
+
+.subject-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+    transition: all 0.18s;
+    position: relative; overflow: hidden;
+}
+.subject-row::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--border); transition: background 0.18s;
+}
+.subject-row:hover {
+    border-color: rgba(62,229,176,0.28);
+    background: #111e2e;
+    transform: translateX(4px);
+    box-shadow: 0 0 18px rgba(62,229,176,0.08);
+}
+.subject-row:hover::before { background: var(--accent); }
+
+.subject-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(62,229,176,0.09);
+    border: 1px solid rgba(62,229,176,0.14);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; color: var(--accent); flex-shrink: 0;
+    transition: all 0.18s;
+}
+.subject-row:hover .subject-icon {
+    background: rgba(62,229,176,0.16);
+    box-shadow: 0 0 12px rgba(62,229,176,0.2);
+}
+.subject-info { flex: 1; min-width: 0; }
+.subject-name { font-size: 14px; font-weight: 600; color: #fff; }
+.subject-code {
+    font-family: var(--mono, monospace); font-size: 11px;
+    color: var(--text-3); margin-top: 2px;
+}
+.subject-arrow {
+    font-size: 14px; color: var(--text-3);
+    opacity: 0; transform: translateX(-4px);
+    transition: all 0.18s;
+}
+.subject-row:hover .subject-arrow { opacity: 1; transform: translateX(0); color: var(--accent); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span>
+            <a href="{% url 'materials:semester_list' %}">Materials</a>
+            <span>/</span>
+            <a href="{% url 'materials:semester_detail' semester.id %}">Semester {{ semester.number }}</a>
+            <span>/</span> {{ course.name }}
+        </div>
+        <div class="page-title">{{ course.name }}</div>
+        <div class="page-subtitle">Semester {{ semester.number }} · Select a subject</div>
+    </div>
+    <a href="{% url 'materials:semester_detail' semester.id %}" class="btn btn-secondary btn-sm">← Back</a>
+</div>
+
+<div class="course-wrap">
+    {% if subjects %}
+    <div class="subject-list">
+        {% for subject in subjects %}
+        <a href="{% url 'materials:subject_detail' subject.id %}" class="subject-row">
+            <div class="subject-icon">▦</div>
+            <div class="subject-info">
+                <div class="subject-name">{{ subject.name }}</div>
+                {% if subject.code %}<div class="subject-code">{{ subject.code }}</div>{% endif %}
+            </div>
+            <span class="subject-arrow">→</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span class="empty-state-icon">▤</span>
+        <p>No subjects have been added for this course yet.</p>
+        <br>
+        <a href="{% url 'materials:semester_list' %}">Browse other semesters →</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

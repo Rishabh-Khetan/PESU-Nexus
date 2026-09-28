@@ -1,0 +1,90 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Materials — PESU Nexus{% endblock %}
+{% block nav_materials %}active{% endblock %}
+
+{% block extra_style %}
+.materials-wrap { max-width: 680px; }
+
+.sem-list { display: flex; flex-direction: column; gap: 10px; }
+
+.sem-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14.5px; font-weight: 600;
+    transition: all 0.18s;
+    position: relative; overflow: hidden;
+}
+.sem-row::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--border);
+    transition: background 0.18s;
+}
+.sem-row:hover {
+    border-color: rgba(62,229,176,0.28);
+    background: #111e2e;
+    transform: translateX(4px);
+    box-shadow: 0 0 20px rgba(62,229,176,0.08);
+}
+.sem-row:hover::before { background: var(--accent); }
+
+.sem-number {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(62,229,176,0.09);
+    border: 1px solid rgba(62,229,176,0.16);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono, monospace); font-size: 14px; font-weight: 800;
+    color: var(--accent); flex-shrink: 0;
+    transition: all 0.18s;
+}
+.sem-row:hover .sem-number {
+    background: rgba(62,229,176,0.16);
+    box-shadow: 0 0 14px rgba(62,229,176,0.2);
+}
+.sem-label { flex: 1; }
+.sem-arrow {
+    font-size: 14px; color: var(--text-3);
+    transition: all 0.18s; opacity: 0;
+    transform: translateX(-4px);
+}
+.sem-row:hover .sem-arrow { opacity: 1; transform: translateX(0); color: var(--accent); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span> Materials
+        </div>
+        <div class="page-title">Academic Resources</div>
+        <div class="page-subtitle">Browse slides, notes, papers and extra materials by semester</div>
+    </div>
+</div>
+
+<div class="materials-wrap">
+    {% if semesters %}
+    <div class="sem-list">
+        {% for sem in semesters %}
+        <a href="{% url 'materials:semester_detail' sem.id %}" class="sem-row">
+            <div class="sem-number">{{ sem.number }}</div>
+            <div class="sem-label">Semester {{ sem.number }}</div>
+            <span class="sem-arrow">→</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span class="empty-state-icon">▤</span>
+        <p>No semesters have been added yet. Check back soon.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

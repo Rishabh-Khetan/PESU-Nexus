@@ -1,0 +1,488 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Test History — PESU Nexus{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block extra_style %}
+/* ---- Summary stat strip ---- */
+.summary-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+}
+.summary-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+}
+.summary-stat::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(62,229,176,0.22), transparent);
+}
+.summary-stat:hover { border-color: var(--border-2); }
+.ss-label {
+    font-size: 11px; font-weight: 700; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 7px;
+}
+.ss-icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: rgba(62,229,176,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--accent);
+}
+.ss-val {
+    font-size: 30px; font-weight: 800; color: #fff;
+    letter-spacing: -0.02em; line-height: 1;
+}
+.ss-sub { font-size: 12px; color: var(--accent); margin-top: 5px; font-weight: 500; }
+
+/* ---- Chart area ---- */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 28px;
+}
+.chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px;
+    position: relative; overflow: hidden;
+}
+.chart-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(62,229,176,0.2), transparent);
+}
+.chart-title {
+    font-size: 13.5px; font-weight: 700; color: #fff;
+    margin-bottom: 4px;
+}
+.chart-sub {
+    font-size: 11.5px; color: var(--text-3);
+    margin-bottom: 18px;
+}
+.chart-wrap { position: relative; height: 280px; }
+
+/* ---- History list ---- */
+.section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+}
+.section-title { font-size: 15px; font-weight: 700; color: #fff; }
+.history-list { display: flex; flex-direction: column; gap: 11px; }
+
+.attempt-card {
+    display: grid;
+    grid-template-columns: 1fr 240px;
+    align-items: center;
+    gap: 0;
+    padding: 24px 26px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    transition: all 0.18s;
+    position: relative; overflow: hidden;
+}
+.attempt-card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--border); transition: background 0.18s;
+}
+.attempt-card:hover {
+    border-color: rgba(62,229,176,0.25);
+    background: #111e2e;
+    transform: translateY(-2px);
+    box-shadow: 0 0 24px rgba(62,229,176,0.08);
+}
+.attempt-card:hover::before { background: var(--accent); }
+.attempt-card-left {
+    display: flex; flex-direction: column; gap: 14px;
+    padding-right: 24px;
+    border-right: 1px solid var(--border);
+}
+.attempt-card-right {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding-left: 24px; gap: 10px;
+}
+
+.attempt-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: rgba(62,229,176,0.09);
+    border: 1px solid rgba(62,229,176,0.14);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; color: var(--accent); flex-shrink: 0;
+}
+.attempt-info { flex: 1; min-width: 180px; }
+.attempt-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.attempt-meta {
+    display: flex; gap: 14px; flex-wrap: wrap;
+    font-size: 11.5px; color: var(--text-2);
+    font-family: var(--mono, monospace);
+}
+.meta-dot { color: var(--text-3); }
+
+/* Inline mini donut */
+.mini-donut-wrap {
+    position: relative; width: 220px; height: 220px; flex-shrink: 0;
+}
+.mini-donut-wrap canvas { position: absolute; top: 0; left: 0; }
+.mini-donut-label {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px;
+}
+.mini-donut-pct {
+    font-size: 26px; font-weight: 800; color: #fff;
+    font-family: var(--mono, monospace); line-height: 1;
+}
+.mini-donut-sub {
+    font-size: 10px; font-weight: 600; color: var(--text-3);
+    text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+.attempt-score {
+    font-size: 20px; font-weight: 800; color: var(--accent);
+    font-family: var(--mono, monospace); white-space: nowrap;
+}
+.attempt-score span { color: var(--text-3); font-size: 13px; font-weight: 400; }
+
+/* Score pill */
+.score-pill {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    font-family: var(--mono, monospace);
+}
+.score-pill-good { background: rgba(62,229,176,0.12); color: var(--accent); border: 1px solid rgba(62,229,176,0.25); }
+.score-pill-mid  { background: rgba(245,197,66,0.10); color: var(--yellow); border: 1px solid rgba(245,197,66,0.22); }
+.score-pill-low  { background: rgba(248,113,113,0.10); color: var(--red); border: 1px solid rgba(248,113,113,0.22); }
+
+/* Donut legend */
+.donut-legend {
+    display: flex; flex-direction: column; gap: 6px;
+    font-size: 11.5px;
+}
+.donut-legend-item {
+    display: flex; align-items: center; gap: 8px; color: var(--text-2);
+}
+.donut-legend-dot {
+    width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0;
+}
+
+@media(max-width:900px) {
+    .charts-row { grid-template-columns: 1fr; }
+    .summary-strip { grid-template-columns: repeat(2,1fr); }
+    .attempt-card { grid-template-columns: 1fr; }
+    .attempt-card-left { border-right: none; border-bottom: 1px solid var(--border); padding-right: 0; padding-bottom: 18px; }
+    .attempt-card-right { padding-left: 0; padding-top: 18px; }
+    .mini-donut-wrap { width: 180px; height: 180px; }
+}
+@media(max-width:560px) {
+    .summary-strip { grid-template-columns: 1fr; }
+    .mini-donut-wrap { width: 160px; height: 160px; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span> Test History
+        </div>
+        <div class="page-title">Test History</div>
+        <div class="page-subtitle">Your performance across all tests</div>
+    </div>
+    <a href="{% url 'mocktests:mock_tests' %}" class="btn btn-primary btn-sm">+ Take a Test</a>
+</div>
+
+{% if entries %}
+
+<!-- Summary strip -->
+<div class="summary-strip">
+    <div class="summary-stat">
+        <div class="ss-label"><span class="ss-icon">▣</span>Tests Taken</div>
+        <div class="ss-val">{{ total_tests }}</div>
+        <div class="ss-sub">All time</div>
+    </div>
+    <div class="summary-stat">
+        <div class="ss-label"><span class="ss-icon">◎</span>Avg Score</div>
+        <div class="ss-val">{{ avg_score }}%</div>
+        <div class="ss-sub">Across all tests</div>
+    </div>
+    <div class="summary-stat">
+        <div class="ss-label"><span class="ss-icon">★</span>Best Score</div>
+        <div class="ss-val">{{ best_score }}%</div>
+        <div class="ss-sub">Personal best</div>
+    </div>
+</div>
+
+<!-- Charts row -->
+<div class="charts-row">
+
+    <!-- Score trend line -->
+    <div class="chart-card">
+        <div class="chart-title">Score Trend</div>
+        <div class="chart-sub">Your % score over time (oldest → newest)</div>
+        <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Correct / Wrong / Skipped stacked bar -->
+    <div class="chart-card">
+        <div class="chart-title">Answer Breakdown</div>
+        <div class="chart-sub">Correct, wrong and skipped per test</div>
+        <div class="chart-wrap">
+            <canvas id="breakdownChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- History list -->
+<div class="section-header">
+    <div class="section-title">All Attempts</div>
+    <span class="mono-label">{{ total_tests }} test{{ total_tests|pluralize }}</span>
+</div>
+
+<div class="history-list">
+    {% for entry in entries %}
+
+    <div class="attempt-card">
+
+        <!-- Left: info + score + button -->
+        <div class="attempt-card-left">
+            <div style="display:flex;align-items:center;gap:14px;">
+                <div class="attempt-icon">▣</div>
+                <div class="attempt-info">
+                    <div class="attempt-title">{{ entry.test.title }}</div>
+                    <div class="attempt-meta">
+                        <span>{{ entry.completed_at|date:"M d, Y · H:i" }}</span>
+                        <span class="meta-dot">·</span>
+                        <span>{{ entry.time_taken }}</span>
+                        <span class="meta-dot">·</span>
+                        <span>{{ entry.test.course_name }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <div class="attempt-score">{{ entry.score }} <span>/ {{ entry.total_marks }}</span></div>
+                {% if entry.percentage >= 70 %}
+                    <span class="score-pill score-pill-good">{{ entry.percentage }}%</span>
+                {% elif entry.percentage >= 40 %}
+                    <span class="score-pill score-pill-mid">{{ entry.percentage }}%</span>
+                {% else %}
+                    <span class="score-pill score-pill-low">{{ entry.percentage }}%</span>
+                {% endif %}
+                <a href="{% url 'mocktests:test_analysis' entry.attempt.id %}" class="btn btn-primary btn-sm">
+                    View Analysis
+                </a>
+            </div>
+        </div>
+
+        <!-- Right: big donut + legend -->
+        <div class="attempt-card-right">
+            <div class="mini-donut-wrap">
+                <canvas class="mini-donut"
+                    data-correct="{{ entry.correct }}"
+                    data-wrong="{{ entry.wrong }}"
+                    data-skipped="{{ entry.skipped }}"
+                    width="220" height="220"></canvas>
+                <div class="mini-donut-label">
+                    <div class="mini-donut-pct">{{ entry.percentage }}%</div>
+                    <div class="mini-donut-sub">Score</div>
+                </div>
+            </div>
+            <div class="donut-legend">
+                <div class="donut-legend-item">
+                    <div class="donut-legend-dot" style="background:rgba(62,229,176,0.85);"></div>
+                    Correct — {{ entry.correct }}
+                </div>
+                <div class="donut-legend-item">
+                    <div class="donut-legend-dot" style="background:rgba(248,113,113,0.80);"></div>
+                    Wrong — {{ entry.wrong }}
+                </div>
+                <div class="donut-legend-item">
+                    <div class="donut-legend-dot" style="background:rgba(245,197,66,0.70);"></div>
+                    Skipped — {{ entry.skipped }}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+    <span class="empty-state-icon">◈</span>
+    <p>You haven't attempted any tests yet.</p>
+    <br>
+    <a href="{% url 'mocktests:mock_tests' %}">Take your first test →</a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+<!-- FIXED: Renamed from 'scripts' to 'extra_script' to match base.html -->
+{% block extra_script %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    // Shared chart defaults
+    Chart.defaults.color = '#7d8fa8';
+    Chart.defaults.font.family = "'Inter', Arial, sans-serif";
+    Chart.defaults.font.size = 11;
+
+    var labels  = {{ chart_labels|safe }};
+    var scores  = {{ chart_scores|safe }};
+    var correct = {{ chart_correct|safe }};
+    var wrong   = {{ chart_wrong|safe }};
+    var skipped = {{ chart_skipped|safe }};
+
+    var gridColor = 'rgba(28,37,53,0.8)';
+    var accent    = '#3ee5b0';
+
+    // ---- Trend line ----
+    var trendCtx = document.getElementById('trendChart');
+    if (trendCtx) {
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Score %',
+                    data: scores,
+                    borderColor: accent,
+                    backgroundColor: 'rgba(62,229,176,0.08)',
+                    pointBackgroundColor: accent,
+                    pointBorderColor: '#070a10',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    borderWidth: 2.5,
+                    fill: true,
+                    tension: 0.35,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0e1420',
+                        borderColor: '#1c2535',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(ctx) { return ' ' + ctx.parsed.y + '%'; }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { maxRotation: 30, minRotation: 0 }
+                    },
+                    y: {
+                        min: 0, max: 100,
+                        grid: { color: gridColor },
+                        ticks: { callback: function(v) { return v + '%'; } }
+                    }
+                }
+            }
+        });
+    }
+
+    // ---- Stacked breakdown bar ----
+    var bdCtx = document.getElementById('breakdownChart');
+    if (bdCtx) {
+        new Chart(bdCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Correct',
+                        data: correct,
+                        backgroundColor: 'rgba(62,229,176,0.75)',
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Wrong',
+                        data: wrong,
+                        backgroundColor: 'rgba(248,113,113,0.70)',
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Skipped',
+                        data: skipped,
+                        backgroundColor: 'rgba(245,197,66,0.60)',
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, padding: 14 }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0e1420',
+                        borderColor: '#1c2535',
+                        borderWidth: 1,
+                    }
+                },
+                scales: {
+                    x: { stacked: true, grid: { color: gridColor } },
+                    y: { stacked: true, grid: { color: gridColor } }
+                }
+            }
+        });
+    }
+
+    // ---- Mini donuts on each card ----
+    document.querySelectorAll('.mini-donut').forEach(function(canvas) {
+        var c = parseInt(canvas.dataset.correct)  || 0;
+        var w = parseInt(canvas.dataset.wrong)    || 0;
+        var s = parseInt(canvas.dataset.skipped)  || 0;
+        var total = c + w + s || 1;
+        new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [c, w, s],
+                    backgroundColor: [
+                        'rgba(62,229,176,0.85)',
+                        'rgba(248,113,113,0.80)',
+                        'rgba(245,197,66,0.70)',
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 2,
+                }]
+            },
+            options: {
+                responsive: false,
+                cutout: '68%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                animation: { duration: 600 }
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

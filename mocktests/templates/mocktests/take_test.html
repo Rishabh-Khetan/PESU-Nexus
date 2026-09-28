@@ -1,0 +1,323 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ test.title }} — PESU Nexus</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        :root{
+            --bg:#070a10;--surface:#0e1420;--surface-2:#111827;
+            --border:#1c2535;--border-2:#263040;
+            --text:#e2e8f4;--text-2:#7d8fa8;--text-3:#4a5568;
+            --accent:#3ee5b0;--red:#f87171;--yellow:#f5c542;
+            --mono:'Consolas','Courier New',monospace;
+            --sans:'Inter',Arial,sans-serif;
+        }
+        body{
+            font-family:var(--sans);background:var(--bg);color:var(--text);
+            min-height:100vh;-webkit-font-smoothing:antialiased;
+        }
+
+        /* ---- TOP BAR ---- */
+        .topbar{
+            position:sticky;top:0;z-index:50;
+            padding:0 32px;height:60px;
+            background:rgba(6,9,14,0.92);
+            backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+            border-bottom:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;gap:16px;
+        }
+        .topbar-left{display:flex;align-items:center;gap:12px;}
+        .topbar-brand{
+            font-family:var(--mono);font-size:15px;font-weight:800;
+            color:var(--accent);text-shadow:0 0 12px rgba(62,229,176,0.4);
+        }
+        .topbar-sep{width:1px;height:20px;background:var(--border);}
+        .topbar-title{font-size:14px;font-weight:600;color:#fff;}
+
+        /* progress bar */
+        .progress-bar-wrap{
+            flex:1;max-width:260px;
+            height:4px;background:var(--border);border-radius:2px;overflow:hidden;
+        }
+        .progress-bar-fill{
+            height:100%;background:var(--accent);border-radius:2px;
+            transition:width 0.3s;
+        }
+        .progress-label{
+            font-family:var(--mono);font-size:11px;color:var(--text-3);
+            white-space:nowrap;
+        }
+
+        /* timer */
+        #timer{
+            font-family:var(--mono);font-size:16px;font-weight:700;
+            color:var(--accent);
+            padding:6px 16px;
+            border:1px solid rgba(62,229,176,0.25);
+            border-radius:999px;
+            background:rgba(62,229,176,0.06);
+            letter-spacing:0.05em;
+            transition:color 0.3s,border-color 0.3s;
+        }
+        #timer.warning{color:var(--yellow);border-color:rgba(245,197,66,0.35);background:rgba(245,197,66,0.06);}
+        #timer.danger{color:var(--red);border-color:rgba(248,113,113,0.35);background:rgba(248,113,113,0.06);}
+
+        /* ---- LAYOUT ---- */
+        .test-body{
+            display:grid;
+            grid-template-columns:1fr 260px;
+            gap:22px;
+            max-width:1140px;
+            margin:28px auto;
+            padding:0 28px 80px;
+        }
+
+        /* ---- QUESTION CARD ---- */
+        .question-card{
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:32px;
+        }
+        .q-meta{
+            display:flex;align-items:center;justify-content:space-between;
+            margin-bottom:18px;
+        }
+        .q-number{
+            font-family:var(--mono);font-size:11px;font-weight:700;
+            letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);
+        }
+        .q-marks{
+            font-family:var(--mono);font-size:11px;
+            color:var(--text-3);
+            background:var(--surface-2);border:1px solid var(--border);
+            padding:3px 10px;border-radius:999px;
+        }
+        .q-text{
+            font-size:18px;font-weight:600;color:#fff;
+            line-height:1.55;margin-bottom:26px;
+        }
+        .options{display:flex;flex-direction:column;gap:10px;}
+        .option{
+            display:flex;align-items:center;gap:14px;
+            padding:14px 18px;
+            background:#090e18;
+            border:1px solid var(--border);
+            border-radius:10px;
+            cursor:pointer;font-size:14px;color:var(--text);
+            transition:all 0.15s;
+            user-select:none;
+        }
+        .option:hover{
+            border-color:rgba(62,229,176,0.3);
+            background:#0d1520;
+        }
+        .option.selected{
+            border-color:var(--accent);
+            background:rgba(62,229,176,0.08);
+            box-shadow:0 0 0 1px rgba(62,229,176,0.15);
+        }
+        .option-letter{
+            width:28px;height:28px;border-radius:7px;
+            background:var(--surface-2);border:1px solid var(--border);
+            display:flex;align-items:center;justify-content:center;
+            font-family:var(--mono);font-size:12px;font-weight:700;
+            color:var(--text-3);flex-shrink:0;
+            transition:all 0.15s;
+        }
+        .option.selected .option-letter{
+            background:var(--accent);color:#04120d;border-color:var(--accent);
+        }
+
+        /* ---- NAVIGATION ---- */
+        .nav-row{
+            display:flex;justify-content:space-between;align-items:center;
+            margin-top:24px;gap:12px;
+        }
+        .nav-btn{
+            display:inline-flex;align-items:center;gap:7px;
+            padding:10px 22px;border-radius:999px;
+            font-size:13.5px;font-weight:600;
+            border:none;cursor:pointer;
+            transition:all 0.17s;font-family:var(--sans);
+        }
+        .nav-btn-prev{
+            background:var(--surface);color:var(--text);
+            border:1px solid var(--border);
+        }
+        .nav-btn-prev:hover:not(:disabled){border-color:var(--border-2);color:#fff;}
+        .nav-btn-next{background:var(--accent);color:#04120d;}
+        .nav-btn-next:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 20px rgba(62,229,176,0.35);}
+        .nav-btn-submit{
+            background:var(--accent);color:#04120d;
+            display:none;
+        }
+        .nav-btn-submit:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 20px rgba(62,229,176,0.35);}
+        .nav-btn:disabled{opacity:0.35;cursor:not-allowed;}
+
+        /* ---- QUESTION PALETTE (sidebar) ---- */
+        .palette-card{
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:16px;
+            padding:22px;
+            position:sticky;top:80px;
+            height:fit-content;
+        }
+        .palette-title{
+            font-size:12px;font-weight:700;color:var(--text-3);
+            text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;
+        }
+        .palette-grid{
+            display:grid;grid-template-columns:repeat(5,1fr);gap:7px;
+            margin-bottom:18px;
+        }
+        .palette-btn{
+            aspect-ratio:1;border-radius:7px;
+            background:var(--surface-2);border:1px solid var(--border);
+            font-size:11px;font-weight:600;color:var(--text-3);
+            cursor:pointer;
+            display:flex;align-items:center;justify-content:center;
+            transition:all 0.15s;
+        }
+        .palette-btn:hover{border-color:var(--border-2);color:var(--text);}
+        .palette-btn.answered{background:rgba(62,229,176,0.12);border-color:rgba(62,229,176,0.25);color:var(--accent);}
+        .palette-btn.current{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 2px rgba(62,229,176,0.2);}
+
+        .palette-legend{display:flex;flex-direction:column;gap:7px;}
+        .legend-item{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-2);}
+        .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+        .legend-dot-answered{background:rgba(62,229,176,0.5);}
+        .legend-dot-current{background:transparent;border:2px solid var(--accent);}
+        .legend-dot-empty{background:var(--surface-2);border:1px solid var(--border);}
+
+        @media(max-width:820px){
+            .test-body{grid-template-columns:1fr;}
+            .palette-card{position:static;}
+            .topbar{padding:0 16px;}
+        }
+        ::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:var(--bg);}
+        ::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px;}
+    </style>
+</head>
+<body>
+
+{% csrf_token %}
+<script>
+    window.addEventListener('beforeunload', function(e){
+        if(!window.__submitting){e.preventDefault();e.returnValue='';}
+    });
+</script>
+
+<!-- TOP BAR -->
+<div class="topbar">
+    <div class="topbar-left">
+        <span class="topbar-brand">P</span>
+        <div class="topbar-sep"></div>
+        <span class="topbar-title">{{ test.title }}</span>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;flex:1;justify-content:center;max-width:320px;margin:0 auto;">
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <span class="progress-label" id="progress-label">0 / {{ test.total_qns }}</span>
+    </div>
+
+    <div id="timer">--:--</div>
+</div>
+
+<!-- BODY -->
+<div class="test-body">
+
+    <!-- Question card -->
+    <div>
+        <div class="question-card">
+            <div class="q-meta">
+                <div class="q-number" id="question-number">Question 1</div>
+                <div class="q-marks">1 mark</div>
+            </div>
+            <div class="q-text" id="question-text">Loading…</div>
+            <div class="options">
+                <div class="option" id="option-A"><span class="option-letter">A</span><span id="option-A-text"></span></div>
+                <div class="option" id="option-B"><span class="option-letter">B</span><span id="option-B-text"></span></div>
+                <div class="option" id="option-C"><span class="option-letter">C</span><span id="option-C-text"></span></div>
+                <div class="option" id="option-D"><span class="option-letter">D</span><span id="option-D-text"></span></div>
+            </div>
+        </div>
+
+        <div class="nav-row">
+            <button class="nav-btn nav-btn-prev" id="prev-btn">← Previous</button>
+            <button class="nav-btn nav-btn-next" id="next-btn">Next →</button>
+            <button class="nav-btn nav-btn-submit" id="submit-btn">Submit Test ✓</button>
+        </div>
+    </div>
+
+    <!-- Palette sidebar -->
+    <div class="palette-card">
+        <div class="palette-title">Question Palette</div>
+        <div class="palette-grid" id="palette-grid"></div>
+        <div class="palette-legend">
+            <div class="legend-item"><div class="legend-dot legend-dot-answered"></div>Answered</div>
+            <div class="legend-item"><div class="legend-dot legend-dot-current"></div>Current</div>
+            <div class="legend-item"><div class="legend-dot legend-dot-empty"></div>Not visited</div>
+        </div>
+    </div>
+
+</div>
+
+{{ questions_data|json_script:"questions-data" }}
+{{ deadline|json_script:"deadline" }}
+{{ attempt.id|json_script:"attempt-id" }}
+
+<script src="{% static 'mocktests/js/take_test.js' %}"></script>
+<script>
+// Palette & progress enhancements
+(function(){
+    function syncPalette(){
+        var grid=document.getElementById('palette-grid');
+        if(!grid||!window.__questions)return;
+        var answers=window.__answers||{};
+        var current=window.__currentQuestion||0;
+        grid.innerHTML='';
+        window.__questions.forEach(function(q,i){
+            var btn=document.createElement('button');
+            btn.className='palette-btn'+(answers[q.id]?' answered':'')+(i===current?' current':'');
+            btn.textContent=i+1;
+            btn.onclick=function(){if(window.__goTo)window.__goTo(i);};
+            grid.appendChild(btn);
+        });
+        var total=window.__questions.length;
+        var done=Object.keys(answers).length;
+        var fill=document.getElementById('progress-fill');
+        var lbl=document.getElementById('progress-label');
+        if(fill)fill.style.width=(total?Math.round(done/total*100):0)+'%';
+        if(lbl)lbl.textContent=done+' / '+total;
+    }
+    // Poll every 400ms
+    setInterval(syncPalette,400);
+    syncPalette();
+
+    // Timer warning colors
+    setInterval(function(){
+        var el=document.getElementById('timer');
+        if(!el)return;
+        var txt=el.textContent;
+        var parts=txt.split(':');
+        if(parts.length===2){
+            var mins=parseInt(parts[0]);
+            if(mins<2)el.className='danger';
+            else if(mins<5)el.className='warning';
+            else el.className='';
+        }
+    },1000);
+})();
+</script>
+</body>
+</html>

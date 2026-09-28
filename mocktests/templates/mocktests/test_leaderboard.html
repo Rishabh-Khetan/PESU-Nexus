@@ -1,0 +1,373 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Leaderboard — {{ test.title }}{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block extra_style %}
+.lb-wrap { max-width: 1000px; margin: 0 auto; }
+
+/* Your rank banner */
+.your-rank-banner {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 16px;
+    padding: 20px 24px;
+    background: rgba(62,229,176,0.06);
+    border: 1px solid rgba(62,229,176,0.22);
+    border-radius: 14px; margin-bottom: 22px;
+}
+.yrb-label { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 3px; }
+.yrb-rank  { font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+.yrb-right { display: flex; gap: 28px; }
+.yrb-stat-val   { font-size: 18px; font-weight: 700; color: var(--accent); font-family: var(--mono, monospace); }
+.yrb-stat-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+
+/* Charts row */
+.charts-row {
+    display: grid; grid-template-columns: 2fr 1fr;
+    gap: 18px; margin-bottom: 22px;
+}
+.chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 22px 24px;
+    position: relative; overflow: hidden;
+}
+.chart-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(62,229,176,0.2), transparent);
+}
+.chart-title { font-size: 13.5px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.chart-sub   { font-size: 11.5px; color: var(--text-3); margin-bottom: 18px; }
+.chart-wrap  { position: relative; height: 220px; }
+
+/* Podium */
+.podium-row {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 14px; height: 140px; margin-bottom: 22px;
+}
+.podium-slot {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px;
+}
+.podium-block {
+    width: 72px; border-radius: 8px 8px 0 0;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 8px;
+    font-family: var(--mono, monospace);
+    font-size: 18px; font-weight: 800; color: #fff;
+}
+.podium-1 { background: linear-gradient(180deg, rgba(62,229,176,0.5), rgba(62,229,176,0.2)); height: 120px; }
+.podium-2 { background: linear-gradient(180deg, rgba(96,165,250,0.4), rgba(96,165,250,0.15)); height: 90px; }
+.podium-3 { background: linear-gradient(180deg, rgba(167,139,250,0.35), rgba(167,139,250,0.1)); height: 68px; }
+.podium-name  { font-size: 12px; font-weight: 600; color: var(--text-2); text-align: center; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podium-score { font-size: 11px; font-family: var(--mono, monospace); color: var(--text-3); }
+.podium-medal { font-size: 20px; }
+
+/* Table */
+.lb-table { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 18px; }
+.lb-row {
+    display: grid;
+    grid-template-columns: 56px 1fr 120px 80px 110px;
+    align-items: center; padding: 15px 20px; gap: 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row.lb-head {
+    background: rgba(255,255,255,0.02); padding: 11px 20px;
+    color: var(--text-3); font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    font-family: var(--mono, monospace);
+}
+.lb-row:not(.lb-head):hover { background: rgba(255,255,255,0.02); }
+.lb-row.me { background: rgba(62,229,176,0.05); border-left: 3px solid var(--accent); }
+
+.lb-rank { font-family: var(--mono, monospace); font-size: 15px; font-weight: 700; color: var(--text-2); }
+.lb-rank.top-1 { font-size: 20px; color: #ffd700; text-shadow: 0 0 14px rgba(255,215,0,0.4); }
+.lb-rank.top-2 { font-size: 18px; color: #c0c0c0; }
+.lb-rank.top-3 { font-size: 17px; color: #cd7f32; }
+
+.lb-username { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.you-pill {
+    display: inline-flex; margin-left: 8px; vertical-align: middle;
+    background: var(--accent); color: #04120d;
+    font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+    font-family: var(--mono, monospace); letter-spacing: 0.05em; text-transform: uppercase;
+}
+.lb-cell { font-size: 13px; color: var(--text-2); text-align: right; font-family: var(--mono, monospace); }
+.lb-cell.score { font-weight: 700; color: var(--accent); font-size: 14px; }
+.lb-cell.time  { color: var(--text-3); }
+
+/* Score bar inside row */
+.lb-bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; width: 100%; }
+.lb-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.6s; }
+
+@media(max-width:820px){
+    .charts-row { grid-template-columns: 1fr; }
+    .lb-row { grid-template-columns: 44px 1fr 90px; }
+    .lb-cell.pct, .lb-cell.time { display: none; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span>
+            <a href="{% url 'mocktests:test_analysis' attempt.id %}">Analysis</a>
+            <span>/</span> Leaderboard
+        </div>
+        <div class="page-title">🏆 Leaderboard</div>
+        <div class="page-subtitle">{{ test.title }} · {{ total_participants }} participant{{ total_participants|pluralize }}</div>
+    </div>
+    <a href="{% url 'mocktests:test_analysis' attempt.id %}" class="btn btn-secondary btn-sm">← Back to Analysis</a>
+</div>
+
+<div class="lb-wrap">
+
+    {% if current_user_entry and not current_user_in_top %}
+    <div class="your-rank-banner">
+        <div>
+            <div class="yrb-label">Your Position</div>
+            <div class="yrb-rank">#{{ current_user_entry.rank }}</div>
+        </div>
+        <div class="yrb-right">
+            <div>
+                <div class="yrb-stat-val">{{ current_user_entry.score }}/{{ total_marks }}</div>
+                <div class="yrb-stat-label">Score</div>
+            </div>
+            <div>
+                <div class="yrb-stat-val">{{ current_user_entry.time_taken }}</div>
+                <div class="yrb-stat-label">Time</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if entries %}
+
+    <!-- Podium top 3 -->
+    {% if entries|length >= 1 %}
+    <div class="podium-row">
+        <!-- 2nd place -->
+        {% if entries|length >= 2 %}
+        <div class="podium-slot">
+            <span class="podium-medal">🥈</span>
+            <div class="podium-name">{{ entries.1.username }}</div>
+            <div class="podium-score">{{ entries.1.score }}/{{ total_marks }}</div>
+            <div class="podium-block podium-2">2</div>
+        </div>
+        {% endif %}
+
+        <!-- 1st place (middle, tallest) -->
+        <div class="podium-slot">
+            <span class="podium-medal">🥇</span>
+            <div class="podium-name">{{ entries.0.username }}</div>
+            <div class="podium-score">{{ entries.0.score }}/{{ total_marks }}</div>
+            <div class="podium-block podium-1">1</div>
+        </div>
+
+        <!-- 3rd place -->
+        {% if entries|length >= 3 %}
+        <div class="podium-slot">
+            <span class="podium-medal">🥉</span>
+            <div class="podium-name">{{ entries.2.username }}</div>
+            <div class="podium-score">{{ entries.2.score }}/{{ total_marks }}</div>
+            <div class="podium-block podium-3">3</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Charts -->
+    <div class="charts-row">
+
+        <!-- Top 10 horizontal bar -->
+        <div class="chart-card">
+            <div class="chart-title">Top 10 Scores</div>
+            <div class="chart-sub">Score % for the top 10 participants</div>
+            <div class="chart-wrap">
+                <canvas id="lbBarChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Score distribution donut -->
+        <div class="chart-card">
+            <div class="chart-title">Score Distribution</div>
+            <div class="chart-sub">How all {{ total_participants }} participants scored</div>
+            <div class="chart-wrap">
+                <canvas id="distChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Full leaderboard table -->
+    <div class="lb-table">
+        <div class="lb-row lb-head">
+            <div>Rank</div>
+            <div>User</div>
+            <div class="lb-cell">Score</div>
+            <div class="lb-cell pct">%</div>
+            <div class="lb-cell time">Time</div>
+        </div>
+
+        {% for entry in entries %}
+        <div class="lb-row {% if entry.user_id == request.user.id %}me{% endif %}">
+
+            <div class="lb-rank
+                {% if entry.rank == 1 %}top-1
+                {% elif entry.rank == 2 %}top-2
+                {% elif entry.rank == 3 %}top-3{% endif %}">
+                {% if entry.rank == 1 %}🥇
+                {% elif entry.rank == 2 %}🥈
+                {% elif entry.rank == 3 %}🥉
+                {% else %}#{{ entry.rank }}{% endif %}
+            </div>
+
+            <div>
+                <div class="lb-username">
+                    {{ entry.username }}
+                    {% if entry.user_id == request.user.id %}<span class="you-pill">You</span>{% endif %}
+                </div>
+                {% if total_marks > 0 %}
+                <div class="lb-bar-wrap">
+                    <div class="lb-bar-fill" style="width:{% widthratio entry.score total_marks 100 %}%"></div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="lb-cell score">{{ entry.score }}/{{ entry.total_marks }}</div>
+
+            <div class="lb-cell pct">
+                {% if entry.total_marks > 0 %}{% widthratio entry.score entry.total_marks 100 %}%{% else %}0%{% endif %}
+            </div>
+
+            <div class="lb-cell time">{{ entry.time_taken }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <span class="empty-state-icon">🏆</span>
+        <p>No completed attempts yet. Be the first!</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    Chart.defaults.color = '#7d8fa8';
+    Chart.defaults.font.family = "'Inter', Arial, sans-serif";
+    Chart.defaults.font.size = 11;
+
+    var gridColor = 'rgba(28,37,53,0.8)';
+
+    // ---- Top 10 horizontal bar ----
+    var lbLabels = {{ lb_chart_labels|safe }};
+    var lbScores = {{ lb_chart_scores|safe }};
+    var currentUser = "{{ request.user.username }}";
+
+    var barColors = lbLabels.map(function(name) {
+        return name === currentUser
+            ? 'rgba(62,229,176,1)'
+            : 'rgba(62,229,176,0.45)';
+    });
+
+    var lbCtx = document.getElementById('lbBarChart');
+    if (lbCtx) {
+        new Chart(lbCtx, {
+            type: 'bar',
+            data: {
+                labels: lbLabels,
+                datasets: [{
+                    label: 'Score %',
+                    data: lbScores,
+                    backgroundColor: barColors,
+                    borderRadius: 6,
+                    barThickness: 18,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0e1420',
+                        borderColor: '#1c2535',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(ctx) { return ' ' + ctx.parsed.x + '%'; }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        min: 0, max: 100,
+                        grid: { color: gridColor },
+                        ticks: { callback: function(v) { return v + '%'; } }
+                    },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // ---- Distribution doughnut ----
+    var distLabels = {{ dist_labels|safe }};
+    var distData   = {{ dist_data|safe }};
+
+    var distCtx = document.getElementById('distChart');
+    if (distCtx) {
+        new Chart(distCtx, {
+            type: 'doughnut',
+            data: {
+                labels: distLabels,
+                datasets: [{
+                    data: distData,
+                    backgroundColor: [
+                        'rgba(248,113,113,0.75)',
+                        'rgba(245,197,66,0.70)',
+                        'rgba(96,165,250,0.70)',
+                        'rgba(62,229,176,0.55)',
+                        'rgba(62,229,176,0.85)',
+                    ],
+                    borderColor: '#0e1420',
+                    borderWidth: 2,
+                    hoverOffset: 6,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, padding: 12 }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0e1420',
+                        borderColor: '#1c2535',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(ctx) {
+                                return ' ' + ctx.label + ': ' + ctx.parsed + ' participant' + (ctx.parsed !== 1 ? 's' : '');
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Semester {{ semester.number }} — PESU Nexus{% endblock %}
+{% block nav_materials %}active{% endblock %}
+
+{% block extra_style %}
+.materials-wrap { max-width: 680px; }
+
+.course-list { display: flex; flex-direction: column; gap: 10px; }
+
+.course-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14.5px; font-weight: 600;
+    transition: all 0.18s;
+    position: relative; overflow: hidden;
+}
+.course-row::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--border); transition: background 0.18s;
+}
+.course-row:hover {
+    border-color: rgba(62,229,176,0.28);
+    background: #111e2e;
+    transform: translateX(4px);
+    box-shadow: 0 0 20px rgba(62,229,176,0.08);
+}
+.course-row:hover::before { background: var(--accent); }
+.course-row.coming-soon {
+    opacity: 0.6; cursor: default;
+    pointer-events: none;
+}
+.course-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(62,229,176,0.09);
+    border: 1px solid rgba(62,229,176,0.16);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; color: var(--accent); flex-shrink: 0;
+    transition: all 0.18s;
+}
+.course-row:hover .course-icon {
+    background: rgba(62,229,176,0.16);
+    box-shadow: 0 0 14px rgba(62,229,176,0.2);
+}
+.course-label { flex: 1; }
+.course-arrow {
+    font-size: 14px; color: var(--text-3);
+    transition: all 0.18s; opacity: 0; transform: translateX(-4px);
+}
+.course-row:hover .course-arrow { opacity: 1; transform: translateX(0); color: var(--accent); }
+.coming-soon-tag {
+    font-size: 10.5px; font-weight: 700;
+    background: rgba(245,197,66,0.12);
+    color: var(--yellow);
+    border: 1px solid rgba(245,197,66,0.25);
+    padding: 3px 10px; border-radius: 999px;
+    font-family: var(--mono, monospace);
+    letter-spacing: 0.05em; text-transform: uppercase;
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span>
+            <a href="{% url 'materials:semester_list' %}">Materials</a>
+            <span>/</span> Semester {{ semester.number }}
+        </div>
+        <div class="page-title">Semester {{ semester.number }}</div>
+        <div class="page-subtitle">
+            {% if courses %}Select a course to browse its subjects{% else %}Resources for this semester are coming soon{% endif %}
+        </div>
+    </div>
+    <a href="{% url 'materials:semester_list' %}" class="btn btn-secondary btn-sm">← All Semesters</a>
+</div>
+
+<div class="materials-wrap">
+    <div class="course-list">
+        {% if courses %}
+            {% for course in courses %}
+            <a href="{% url 'materials:course_detail' semester.id course.id %}" class="course-row">
+                <div class="course-icon">▤</div>
+                <div class="course-label">{{ course.name }}</div>
+                <span class="course-arrow">→</span>
+            </a>
+            {% endfor %}
+        {% else %}
+            <a href="{% url 'materials:coming_soon' %}" class="course-row coming-soon">
+                <div class="course-icon" style="opacity:0.5;">▤</div>
+                <div class="course-label">Coming Soon</div>
+                <span class="coming-soon-tag">Soon</span>
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

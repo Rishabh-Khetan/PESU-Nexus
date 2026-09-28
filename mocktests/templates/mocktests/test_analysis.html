@@ -1,0 +1,176 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Analysis — {{ test.title }}{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block extra_style %}
+.analysis-wrap {
+    max-width: 780px;
+    margin: 0 auto;
+}
+
+/* Score hero */
+.score-hero {
+    background: linear-gradient(135deg, #0e1f35 0%, #0b1828 50%, #071320 100%);
+    border: 1px solid rgba(62,229,176,0.14);
+    border-radius: 20px;
+    padding: 44px 36px;
+    text-align: center;
+    margin-bottom: 22px;
+    position: relative; overflow: hidden;
+}
+.score-hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(62,229,176,0.4), transparent);
+}
+.score-hero::after {
+    content: '';
+    position: absolute; top: -80px; right: -80px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(62,229,176,0.10) 0%, transparent 65%);
+    pointer-events: none;
+}
+.score-big {
+    font-size: 72px; font-weight: 800; color: var(--accent);
+    line-height: 1; letter-spacing: -0.03em;
+    text-shadow: 0 0 50px rgba(62,229,176,0.4);
+    position: relative; z-index: 1;
+}
+.score-denom {
+    font-size: 24px; color: var(--text-3);
+    font-family: var(--mono, monospace); margin-top: 6px;
+    position: relative; z-index: 1;
+}
+.score-pct {
+    margin-top: 14px;
+    font-size: 32px; font-weight: 700; color: #fff;
+    letter-spacing: -0.02em;
+    position: relative; z-index: 1;
+}
+.score-subtitle {
+    margin-top: 6px; font-size: 13.5px; color: var(--text-2);
+    position: relative; z-index: 1;
+}
+
+/* Stats grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.stat-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 18px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+.stat-pill:hover { border-color: var(--border-2); }
+.stat-pill-value {
+    font-size: 28px; font-weight: 800; color: #fff;
+    font-family: var(--mono, monospace);
+    line-height: 1; letter-spacing: -0.02em;
+}
+.stat-pill-label {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: 7px;
+}
+.stat-pill.correct .stat-pill-value { color: var(--accent); }
+.stat-pill.wrong   .stat-pill-value { color: var(--red); }
+.stat-pill.skipped .stat-pill-value { color: var(--yellow); }
+.stat-pill.rank    .stat-pill-value { color: var(--accent); }
+
+/* Action buttons */
+.action-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-bottom: 14px;
+}
+.action-row-full { margin-bottom: 0; }
+
+@media(max-width:640px){
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .action-row { grid-template-columns: 1fr; }
+    .score-big { font-size: 56px; }
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span>
+            <a href="{% url 'mocktests:attempt_history' %}">Test History</a>
+            <span>/</span> Analysis
+        </div>
+        <div class="page-title">{{ test.title }}</div>
+        <div class="page-subtitle">Result for {{ attempt.user.username }}</div>
+    </div>
+</div>
+
+<div class="analysis-wrap">
+
+    <!-- Score hero -->
+    <div class="score-hero">
+        <div class="score-big">{{ score }}</div>
+        <div class="score-denom">out of {{ total_marks }}</div>
+        <div class="score-pct">{{ percentage }}%</div>
+        <div class="score-subtitle">
+            {% if percentage >= 80 %}Outstanding performance!
+            {% elif percentage >= 60 %}Good effort — keep it up!
+            {% elif percentage >= 40 %}Room to improve. Review the questions below.
+            {% else %}Keep practicing — you'll get there!
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Stats grid -->
+    <div class="stats-grid">
+        <div class="stat-pill correct">
+            <div class="stat-pill-value">{{ correct_count }}</div>
+            <div class="stat-pill-label">Correct</div>
+        </div>
+        <div class="stat-pill wrong">
+            <div class="stat-pill-value">{{ wrong_count }}</div>
+            <div class="stat-pill-label">Wrong</div>
+        </div>
+        <div class="stat-pill skipped">
+            <div class="stat-pill-value">{{ unattempted_count }}</div>
+            <div class="stat-pill-label">Skipped</div>
+        </div>
+        <div class="stat-pill">
+            <div class="stat-pill-value">{{ accuracy }}%</div>
+            <div class="stat-pill-label">Accuracy</div>
+        </div>
+        <div class="stat-pill rank">
+            <div class="stat-pill-value">#{{ rank }}</div>
+            <div class="stat-pill-label">Rank</div>
+        </div>
+        <div class="stat-pill">
+            <div class="stat-pill-value" style="font-size:18px;">
+                {% if time_taken %}{{ time_taken }}{% else %}—{% endif %}
+            </div>
+            <div class="stat-pill-label">Time Taken</div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-row">
+        <a href="{% url 'mocktests:test_questions' attempt.id %}" class="btn btn-primary btn-lg" style="display:flex;">
+            Review Questions
+        </a>
+        <a href="{% url 'mocktests:test_leaderboard' attempt.id %}" class="btn btn-secondary btn-lg" style="display:flex;">
+            View Leaderboard
+        </a>
+    </div>
+    <div style="margin-top:12px;text-align:center;">
+        <a href="{% url 'mocktests:attempt_history' %}" class="btn btn-ghost btn-sm">← Back to History</a>
+    </div>
+
+</div>
+{% endblock %}

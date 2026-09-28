@@ -1,0 +1,101 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Slides — {{ subject.name }}{% endblock %}
+{% block nav_materials %}active{% endblock %}
+
+{% block extra_style %}
+.slides-wrap { max-width: 680px; }
+
+.slides-list { display: flex; flex-direction: column; gap: 10px; }
+
+.slide-row {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 14px; font-weight: 600;
+    transition: all 0.18s;
+    position: relative; overflow: hidden;
+}
+.slide-row::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--border); transition: background 0.18s;
+}
+.slide-row:hover {
+    border-color: rgba(62,229,176,0.28);
+    background: #111e2e;
+    transform: translateX(4px);
+    box-shadow: 0 0 18px rgba(62,229,176,0.08);
+}
+.slide-row:hover::before { background: var(--accent); }
+
+.slide-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: rgba(62,229,176,0.09);
+    border: 1px solid rgba(62,229,176,0.14);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: var(--accent); flex-shrink: 0;
+    transition: all 0.18s;
+}
+.slide-row:hover .slide-icon {
+    background: rgba(62,229,176,0.16);
+    box-shadow: 0 0 12px rgba(62,229,176,0.2);
+}
+.slide-label { flex: 1; }
+.slide-download {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--mono, monospace); font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    background: rgba(62,229,176,0.10);
+    border: 1px solid rgba(62,229,176,0.2);
+    padding: 4px 12px; border-radius: 999px;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    opacity: 0; transform: translateX(-4px);
+    transition: all 0.18s;
+}
+.slide-row:hover .slide-download { opacity: 1; transform: translateX(0); }
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span>
+            <a href="{% url 'materials:semester_list' %}">Materials</a>
+            <span>/</span>
+            <a href="{% url 'materials:subject_detail' subject.id %}">{{ subject.name }}</a>
+            <span>/</span> Slides
+        </div>
+        <div class="page-title">Slides</div>
+        <div class="page-subtitle">
+            {{ subject.name }}{% if subject.code %} · {{ subject.code }}{% endif %}
+        </div>
+    </div>
+    <a href="{% url 'materials:subject_detail' subject.id %}" class="btn btn-secondary btn-sm">← Back</a>
+</div>
+
+<div class="slides-wrap">
+    {% if units %}
+    <div class="slides-list">
+        {% for unit, material in units.items %}
+        <a href="{% url 'materials:download' material.id %}" class="slide-row">
+            <div class="slide-icon">◱</div>
+            <div class="slide-label">Unit {{ unit }}</div>
+            <span class="slide-download">Download ↓</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <span class="empty-state-icon">◱</span>
+        <p>No slides have been uploaded yet. Check back soon.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

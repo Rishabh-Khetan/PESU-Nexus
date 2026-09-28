@@ -1,0 +1,70 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Coming Soon — PESU Nexus{% endblock %}
+{% block nav_materials %}active{% endblock %}
+
+{% block extra_style %}
+.coming-soon-wrap {
+    max-width: 560px;
+    margin: 60px auto;
+    text-align: center;
+}
+.cs-glow-icon {
+    width: 90px; height: 90px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(62,229,176,0.18), rgba(62,229,176,0.05));
+    border: 1px solid rgba(62,229,176,0.22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px; color: var(--accent);
+    margin: 0 auto 28px;
+    box-shadow: 0 0 40px rgba(62,229,176,0.12);
+}
+.cs-title {
+    font-size: 32px; font-weight: 800; color: #fff;
+    letter-spacing: -0.02em; margin-bottom: 12px;
+}
+.cs-sub {
+    font-size: 15px; color: var(--text-2);
+    line-height: 1.6; margin-bottom: 32px;
+    max-width: 400px; margin-left: auto; margin-right: auto;
+}
+.cs-badge {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(245,197,66,0.10);
+    border: 1px solid rgba(245,197,66,0.25);
+    color: var(--yellow);
+    padding: 6px 16px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+    font-family: var(--mono, monospace);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 32px;
+}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="page-breadcrumb">
+            <a href="{% url 'core:home' %}">Dashboard</a>
+            <span>/</span>
+            <a href="{% url 'materials:semester_list' %}">Materials</a>
+            <span>/</span> Coming Soon
+        </div>
+        <div class="page-title">Materials</div>
+    </div>
+</div>
+
+<div class="coming-soon-wrap">
+    <div class="cs-glow-icon">▤</div>
+    <div class="cs-badge">⏳ Coming Soon</div>
+    <div class="cs-title">Resources on the Way</div>
+    <div class="cs-sub">
+        We're working on adding study materials for this semester.
+        Check back soon — slides, notes, and papers will be available here.
+    </div>
+    <a href="{% url 'materials:semester_list' %}" class="btn btn-primary btn-lg">
+        ← Back to Semesters
+    </a>
+</div>
+{% endblock %}
