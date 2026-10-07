@@ -8,6 +8,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Markdown rendering + sanitization -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+    <!-- Syntax highlighting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/styles/atom-one-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
         :root{
@@ -56,6 +62,41 @@
         .q-number{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);}
         .q-text{font-size:18px;font-weight:600;color:#fff;line-height:1.55;margin-bottom:24px;}
 
+        /* ---- Markdown-rendered content inside .q-text ---- */
+        .q-text p{margin:0 0 10px;}
+        .q-text p:last-child{margin-bottom:0;}
+        .q-text strong{color:#fff;font-weight:700;}
+        .q-text em{color:var(--text);}
+        .q-text ul,.q-text ol{margin:8px 0 10px 22px;}
+        .q-text li{margin-bottom:4px;}
+        .q-text code{
+            font-family:var(--mono);
+            font-size:14px;
+            background:rgba(62,229,176,0.08);
+            border:1px solid rgba(62,229,176,0.15);
+            padding:1.5px 6px;
+            border-radius:4px;
+            color:var(--accent);
+        }
+        .q-text pre{
+            background:#060a12;
+            border:1px solid var(--border);
+            border-radius:8px;
+            padding:14px 16px;
+            margin:14px 0;
+            overflow-x:auto;
+            font-family:var(--mono);
+            font-size:13.5px;
+            line-height:1.55;
+        }
+        .q-text pre code{
+            background:transparent;
+            padding:0;
+            border:none;
+            color:inherit;
+            font-size:inherit;
+        }
+
         .options{display:flex;flex-direction:column;gap:10px;}
         .option{
             display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -97,6 +138,37 @@
             color:var(--accent);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:9px;
         }
         .explanation-text{font-size:14px;color:var(--text-2);line-height:1.6;}
+
+        /* ---- Markdown-rendered content inside .explanation-text ---- */
+        .explanation-text p{margin:0 0 8px;}
+        .explanation-text p:last-child{margin-bottom:0;}
+        .explanation-text code{
+            font-family:var(--mono);
+            font-size:13px;
+            background:rgba(62,229,176,0.08);
+            border:1px solid rgba(62,229,176,0.15);
+            padding:1.5px 6px;
+            border-radius:4px;
+            color:var(--accent);
+        }
+        .explanation-text pre{
+            background:#060a12;
+            border:1px solid var(--border);
+            border-radius:8px;
+            padding:12px 14px;
+            margin:12px 0;
+            overflow-x:auto;
+            font-family:var(--mono);
+            font-size:13px;
+            line-height:1.55;
+        }
+        .explanation-text pre code{
+            background:transparent;
+            padding:0;
+            border:none;
+            color:inherit;
+            font-size:inherit;
+        }
 
         /* nav */
         .nav-row{display:flex;justify-content:space-between;align-items:center;margin-top:22px;gap:12px;}
