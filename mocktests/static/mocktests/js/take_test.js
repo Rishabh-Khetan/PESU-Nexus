@@ -47,6 +47,37 @@ function setOptionText(letter, text) {
     }
 }
 
+// Render markdown safely + highlight code blocks
+function renderMarkdown(targetEl, rawText) {
+    if (!targetEl) return;
+    var raw = rawText || '';
+
+    var htmlFromMd;
+    if (typeof marked !== 'undefined') {
+        htmlFromMd = marked.parse(raw);
+    } else {
+        // Fallback if marked fails to load
+        htmlFromMd = raw
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+    }
+
+    if (typeof DOMPurify !== 'undefined') {
+        targetEl.innerHTML = DOMPurify.sanitize(htmlFromMd);
+    } else {
+        targetEl.innerHTML = htmlFromMd;
+    }
+
+    // Syntax-highlight any code blocks
+    if (typeof hljs !== 'undefined') {
+        targetEl.querySelectorAll('pre code').forEach(function(block) {
+            hljs.highlightElement(block);
+        });
+    }
+}
+
 const prevBtn   = document.getElementById("prev-btn");
 const nextBtn   = document.getElementById("next-btn");
 const submitBtn = document.getElementById("submit-btn");
@@ -59,7 +90,8 @@ function renderQuestion() {
     questionNumber.textContent =
         `Question ${currentQuestion + 1} of ${questions.length}`;
 
-    questionText.textContent = question.question_desc;
+    // Render markdown → sanitized HTML
+    renderMarkdown(questionText, question.question_desc);
 
     setOptionText('A', question.option_a);
     setOptionText('B', question.option_b);

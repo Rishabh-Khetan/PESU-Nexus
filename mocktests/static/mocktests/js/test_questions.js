@@ -20,6 +20,38 @@ const optionRefs = {
 };
 
 
+// Render markdown safely + highlight code blocks
+function renderMarkdown(targetEl, rawText) {
+    if (!targetEl) return;
+    var raw = rawText || '';
+
+    var htmlFromMd;
+    if (typeof marked !== 'undefined') {
+        htmlFromMd = marked.parse(raw);
+    } else {
+        // Fallback if marked fails to load
+        htmlFromMd = raw
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
+    }
+
+    if (typeof DOMPurify !== 'undefined') {
+        targetEl.innerHTML = DOMPurify.sanitize(htmlFromMd);
+    } else {
+        targetEl.innerHTML = htmlFromMd;
+    }
+
+    // Syntax-highlight any code blocks
+    if (typeof hljs !== 'undefined') {
+        targetEl.querySelectorAll('pre code').forEach(function(block) {
+            hljs.highlightElement(block);
+        });
+    }
+}
+
+
 function buildPalette() {
     if (!paletteGrid) return;
     paletteGrid.innerHTML = '';
@@ -48,7 +80,9 @@ function renderQuestion() {
     else                         questionCard.classList.add("wrong-border");
 
     questionNumber.textContent = 'Question ' + (currentQuestion + 1) + ' of ' + review.length;
-    questionText.textContent   = item.question_desc;
+
+    // Render markdown → sanitized HTML for question text
+    renderMarkdown(questionText, item.question_desc);
 
     // Reset options
     ["A","B","C","D"].forEach(function(letter) {
@@ -83,8 +117,14 @@ function renderQuestion() {
         correctRef.tag.className = 'tag tag-ref';
     }
 
-    // Explanation
-    if (explanationText) explanationText.textContent = item.explanation || 'Explanation coming soon.';
+    // Explanation — rendered as markdown too
+    if (explanationText) {
+        if (item.explanation) {
+            renderMarkdown(explanationText, item.explanation);
+        } else {
+            explanationText.textContent = 'Explanation coming soon.';
+        }
+    }
 
     // Nav
     prevBtn.disabled = (currentQuestion === 0);
