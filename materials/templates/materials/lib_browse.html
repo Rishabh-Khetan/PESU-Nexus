@@ -1,0 +1,99 @@
+{% extends "materials/lib_base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+.group { margin-bottom: 36px; }
+.list { display: flex; flex-direction: column; gap: 12px; }
+.row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 24px;
+    background: rgba(13, 18, 25, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(62, 229, 176, 0.08);
+    border-radius: 16px;
+    color: #e8edf4;
+    text-decoration: none;
+    transition: 0.25s;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.row:hover {
+    transform: translateX(4px);
+    border-color: rgba(62, 229, 176, 0.35);
+    background: rgba(16, 24, 35, 0.7);
+    box-shadow: 0 0 30px rgba(62, 229, 176, 0.12), 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+.row-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: rgba(62, 229, 176, 0.08);
+    border: 1px solid rgba(62, 229, 176, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3ee5b0;
+    font-size: 18px;
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+.row-name { flex: 1; min-width: 0; font-size: 16px; font-weight: 600; color: #ffffff; word-break: break-word; }
+.row-size { color: #5a6472; font-size: 13px; font-family: 'Consolas', 'Courier New', monospace; white-space: nowrap; }
+.row-tag {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Consolas', 'Courier New', monospace;
+    letter-spacing: 0.08em;
+    color: #3ee5b0;
+    background: rgba(62, 229, 176, 0.10);
+    border: 1px solid rgba(62, 229, 176, 0.20);
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>{{ title }}</h1>
+    <p>{{ crumb }}</p>
+</div>
+
+{% if folders %}
+<section class="group">
+    <h2 class="section-title">Folders<span class="section-count">{{ folders|length }}</span></h2>
+    <div class="list">
+        {% for f in folders %}
+        <a href="{{ f.url }}" class="row">
+            <div class="row-icon">&#9636;</div>
+            <div class="row-name">{{ f.name }}</div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if files %}
+<section class="group">
+    <h2 class="section-title">Files<span class="section-count">{{ files|length }}</span></h2>
+    <div class="list">
+        {% for f in files %}
+        <a href="{{ f.url }}" class="row" {% if f.ext == "PDF" or f.ext == "TXT" %}target="_blank"{% endif %}>
+            <div class="row-icon">&#9637;</div>
+            <div class="row-name">{{ f.name }}</div>
+            <div class="row-size">{{ f.size }}</div>
+            <div class="row-tag">{{ f.ext }}</div>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% if not folders and not files %}
+<div class="empty">Nothing here yet.</div>
+{% endif %}
+
+<a href="{{ back_url }}" class="back-btn">&larr; {{ back_label }}</a>
+{% endblock %}
