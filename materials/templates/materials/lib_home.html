@@ -1,0 +1,93 @@
+{% extends "materials/lib_base.html" %}
+
+{% block title %}Study Materials{% endblock %}
+
+{% block extra_css %}
+.group { margin-bottom: 44px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 170px;
+    padding: 28px;
+    background: rgba(13, 18, 25, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(62, 229, 176, 0.08);
+    border-radius: 20px;
+    text-decoration: none;
+    color: #e8edf4;
+    position: relative;
+    overflow: hidden;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(62, 229, 176, 0.25) 50%, transparent 100%);
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+.card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(62, 229, 176, 0.35);
+    background: rgba(16, 24, 35, 0.7);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 0 40px rgba(62, 229, 176, 0.15), 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+.card:hover::before { opacity: 1; }
+.card-top { display: flex; align-items: center; gap: 16px; }
+.card-icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: rgba(62, 229, 176, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3ee5b0;
+    font-size: 22px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    border: 1px solid rgba(62, 229, 176, 0.18);
+    transition: 0.3s;
+}
+.card:hover .card-icon { background: rgba(62, 229, 176, 0.15); box-shadow: 0 0 24px rgba(62, 229, 176, 0.3); }
+.card h3 { margin: 0; font-size: 18px; font-weight: 700; color: #ffffff; line-height: 1.3; }
+.card-meta { margin-top: 4px; font-size: 13px; color: #5a6472; font-family: 'Consolas', 'Courier New', monospace; }
+.card-sub { font-size: 14px; color: #8b95a5; line-height: 1.6; }
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>Study Materials</h1>
+    <p>Pick a section to browse materials</p>
+</div>
+
+{% for g in groups %}
+<section class="group">
+    <h2 class="section-title">{{ g.title }}<span class="section-count">{{ g.cards|length }} item{{ g.cards|length|pluralize }}</span></h2>
+    {% if g.cards %}
+    <div class="cards">
+        {% for c in g.cards %}
+        <a href="{{ c.url }}" class="card">
+            <div class="card-top">
+                <div class="card-icon">&#9636;</div>
+                <div>
+                    <h3>{{ c.title }}</h3>
+                    <div class="card-meta">{{ c.meta }}</div>
+                </div>
+            </div>
+            {% if c.items %}<div class="card-sub">{{ c.items|join:", " }}</div>{% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">Nothing here yet.</div>
+    {% endif %}
+</section>
+{% endfor %}
+{% endblock %}
