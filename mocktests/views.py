@@ -30,7 +30,28 @@ def _format_duration(td):
 
 @login_required
 def mocktest_view(request):
-    courses = (
+    # All semesters that actually have at least one test
+    semesters = list(
+        Mock_Test.objects
+        .values_list('semester', flat=True)
+        .distinct()
+        .order_by('semester')
+    )
+
+    # Build mapping: { 1: ["B.Tech CSE", "B.Tech ECE"], 2: [...] }
+    # NOTE: keys are ints here; json_script will serialize them as strings automatically
+    courses_by_sem = {}
+    for sem in semesters:
+        courses_by_sem[sem] = list(
+            Mock_Test.objects
+            .filter(semester=sem)
+            .values_list('course_name', flat=True)
+            .distinct()
+            .order_by('course_name')
+        )
+
+    # Fallback: all courses (in case template wants them for default state)
+    all_courses = list(
         Mock_Test.objects
         .values_list('course_name', flat=True)
         .distinct()
@@ -41,7 +62,9 @@ def mocktest_view(request):
         request,
         'mocktests/mocktest.html',
         {
-            'courses': courses
+            'semesters': semesters,
+            'courses_by_sem_json': courses_by_sem,   # <-- dict, not json.dumps()
+            'all_courses': all_courses,
         }
     )
 
@@ -66,6 +89,7 @@ def test_selection_view(request):
         )
 
     return redirect('mocktests:mock_tests')
+
 
 @login_required
 def take_test_view(request, test_id):
@@ -351,10 +375,6 @@ def _first_attempts_for_test(test):
       - Only completed attempts count
       - One entry per user: their earliest-started completed attempt
       - Sort by score DESC, then time_taken ASC (faster wins ties)
-
-    Returns list of dicts:
-      [{'user_id', 'username', 'attempt', 'score', 'time_taken',
-        'time_taken_seconds', 'total_marks'}, ...]
     """
 
     all_attempts = (
@@ -487,7 +507,6 @@ def attempt_history_view(request):
             q.marks for q in attempt.test.questions.all()
         )
 
-        # Per-attempt correct/wrong/skipped breakdown
         questions = attempt.test.questions.all()
         selected_map = {
             ans.question_id: ans.selected_answer
@@ -520,7 +539,6 @@ def attempt_history_view(request):
             ),
         })
 
-    # Chart datasets — chronological order (oldest first) for the trend line
     chart_entries = list(reversed(latest_per_test))
     chart_labels = [e['test'].title[:20] for e in chart_entries]
     chart_scores = [e['percentage'] for e in chart_entries]
@@ -528,7 +546,6 @@ def attempt_history_view(request):
     chart_wrong = [e['wrong'] for e in chart_entries]
     chart_skipped = [e['skipped'] for e in chart_entries]
 
-    # Aggregate summary
     total_tests = len(latest_per_test)
     avg_score = round(sum(chart_scores) / total_tests, 1) if total_tests else 0
     best_score = max(chart_scores) if chart_scores else 0
