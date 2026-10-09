@@ -57,7 +57,7 @@
 /* Stats grid */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 14px;
     margin-bottom: 22px;
 }
@@ -84,6 +84,7 @@
 .stat-pill.wrong   .stat-pill-value { color: var(--red); }
 .stat-pill.skipped .stat-pill-value { color: var(--yellow); }
 .stat-pill.rank    .stat-pill-value { color: var(--accent); }
+.stat-pill.average .stat-pill-value { color: var(--accent); }
 
 /* Action buttons */
 .action-row {
@@ -148,8 +149,16 @@
             <div class="stat-pill-label">Accuracy</div>
         </div>
         <div class="stat-pill rank">
-            <div class="stat-pill-value">#{{ rank }}</div>
-            <div class="stat-pill-label">Rank</div>
+            <div class="stat-pill-value">
+                #{{ rank }}<span style="font-size:16px;color:var(--text-3);font-weight:600;letter-spacing:0;">/{{ total_attempts }}</span>
+            </div>
+            <div class="stat-pill-label">
+                Rank{% if total_attempts > 1 %} · {{ total_attempts }} participant{{ total_attempts|pluralize }}{% endif %}
+            </div>
+        </div>
+        <div class="stat-pill average">
+            <div class="stat-pill-value">{{ average_score }}%</div>
+            <div class="stat-pill-label">Test Average</div>
         </div>
         <div class="stat-pill">
             <div class="stat-pill-value" style="font-size:18px;">
