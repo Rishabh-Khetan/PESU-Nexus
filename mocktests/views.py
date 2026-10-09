@@ -63,7 +63,7 @@ def mocktest_view(request):
         'mocktests/mocktest.html',
         {
             'semesters': semesters,
-            'courses_by_sem_json': courses_by_sem,   # <-- dict, not json.dumps()
+            'courses_by_sem_json': courses_by_sem,
             'all_courses': all_courses,
         }
     )
@@ -278,7 +278,7 @@ def test_analysis_view(request, attempt_id):
     if attempt.completed_at:
         time_taken = _format_duration(attempt.completed_at - attempt.started_at)
 
-    # Rank among unique users (first attempt per user, tie by time)
+    # Rank + average among unique users (first attempt per user, tie by time)
     first_attempts = _first_attempts_for_test(attempt.test)
 
     rank = None
@@ -291,6 +291,14 @@ def test_analysis_view(request, attempt_id):
         rank = len(first_attempts) + 1
 
     total_attempts = len(first_attempts)
+
+    # Average score across all unique test-takers (as a percentage)
+    average_score = 0
+    if total_attempts > 0 and total_marks > 0:
+        total_score_sum = sum(entry['score'] for entry in first_attempts)
+        average_score = round(
+            (total_score_sum / total_attempts / total_marks) * 100, 1
+        )
 
     response = render(
         request,
@@ -309,6 +317,7 @@ def test_analysis_view(request, attempt_id):
             'time_taken': time_taken,
             'rank': rank,
             'total_attempts': total_attempts,
+            'average_score': average_score,
         }
     )
     response['Cache-Control'] = 'no-store'
