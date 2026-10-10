@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -30,7 +31,26 @@ def _format_duration(td):
 
 @login_required
 def mocktest_view(request):
-    courses = (
+    # All semesters that actually have at least one test
+    semesters = list(
+        Mock_Test.objects
+        .values_list('semester', flat=True)
+        .distinct()
+        .order_by('semester')
+    )
+
+    # Build mapping: { 1: ["B.Tech CSE", "B.Tech ECE"], 2: [...] }
+    courses_by_sem = {}
+    for sem in semesters:
+        courses_by_sem[sem] = list(
+            Mock_Test.objects
+            .filter(semester=sem)
+            .values_list('course_name', flat=True)
+            .distinct()
+            .order_by('course_name')
+        )
+
+    all_courses = list(
         Mock_Test.objects
         .values_list('course_name', flat=True)
         .distinct()
@@ -41,7 +61,9 @@ def mocktest_view(request):
         request,
         'mocktests/mocktest.html',
         {
-            'courses': courses
+            'semesters': semesters,
+            'courses_by_sem_json': courses_by_sem,
+            'all_courses': all_courses,
         }
     )
 
@@ -66,6 +88,7 @@ def test_selection_view(request):
         )
 
     return redirect('mocktests:mock_tests')
+
 
 @login_required
 def take_test_view(request, test_id):
@@ -172,29 +195,73 @@ def submit_test_view(request):
                 status=400
             )
 
-    score = 0
+    # ============================================================
+    # FAST PATH — batch all DB operations into ~4 queries
+    # ============================================================
 
-    for question_id, selected_answer in answers.items():
+    # 1. Parse question IDs once
+    question_ids = []
+    for qid in answers.keys():
         try:
-            question = Question.objects.get(
-                id=question_id,
-                test=attempt.test
-            )
-        except Question.DoesNotExist:
+            question_ids.append(int(qid))
+        except (TypeError, ValueError):
             continue
 
-        Answer.objects.update_or_create(
-            attempt=attempt,
-            question=question,
-            defaults={'selected_answer': selected_answer}
-        )
+    # 2. Fetch all needed questions in ONE query
+    questions_by_id = Question.objects.filter(
+        id__in=question_ids,
+        test=attempt.test
+    ).in_bulk()
+
+    # 3. Fetch existing answers for this attempt in ONE query
+    existing_answers = {
+        ans.question_id: ans
+        for ans in Answer.objects.filter(attempt=attempt)
+    }
+
+    # 4. Build create/update lists and compute score in memory
+    to_create = []
+    to_update = []
+    score = 0
+
+    for question_id_str, selected_answer in answers.items():
+        try:
+            qid = int(question_id_str)
+        except (TypeError, ValueError):
+            continue
+
+        question = questions_by_id.get(qid)
+        if question is None:
+            continue
 
         if selected_answer.lower() == question.correct_answer.lower():
             score += question.marks
 
-    attempt.score = score
-    attempt.completed_at = now
-    attempt.save()
+        existing = existing_answers.get(qid)
+        if existing is not None:
+            existing.selected_answer = selected_answer
+            to_update.append(existing)
+        else:
+            to_create.append(Answer(
+                attempt=attempt,
+                question=question,
+                selected_answer=selected_answer,
+            ))
+
+    # 5. Write everything in ONE transaction (batched)
+    with transaction.atomic():
+        if to_create:
+            Answer.objects.bulk_create(to_create, batch_size=500)
+        if to_update:
+            Answer.objects.bulk_update(
+                to_update,
+                ['selected_answer'],
+                batch_size=500,
+            )
+
+        attempt.score = score
+        attempt.completed_at = now
+        attempt.save(update_fields=['score', 'completed_at'])
 
     expired = now >= deadline
 
@@ -254,7 +321,7 @@ def test_analysis_view(request, attempt_id):
     if attempt.completed_at:
         time_taken = _format_duration(attempt.completed_at - attempt.started_at)
 
-    # Rank among unique users (first attempt per user, tie by time)
+    # Rank + average among unique users (first attempt per user, tie by time)
     first_attempts = _first_attempts_for_test(attempt.test)
 
     rank = None
@@ -267,6 +334,14 @@ def test_analysis_view(request, attempt_id):
         rank = len(first_attempts) + 1
 
     total_attempts = len(first_attempts)
+
+    # Average score across all unique test-takers (as a percentage)
+    average_score = 0
+    if total_attempts > 0 and total_marks > 0:
+        total_score_sum = sum(entry['score'] for entry in first_attempts)
+        average_score = round(
+            (total_score_sum / total_attempts / total_marks) * 100, 1
+        )
 
     response = render(
         request,
@@ -285,6 +360,7 @@ def test_analysis_view(request, attempt_id):
             'time_taken': time_taken,
             'rank': rank,
             'total_attempts': total_attempts,
+            'average_score': average_score,
         }
     )
     response['Cache-Control'] = 'no-store'
@@ -351,10 +427,6 @@ def _first_attempts_for_test(test):
       - Only completed attempts count
       - One entry per user: their earliest-started completed attempt
       - Sort by score DESC, then time_taken ASC (faster wins ties)
-
-    Returns list of dicts:
-      [{'user_id', 'username', 'attempt', 'score', 'time_taken',
-        'time_taken_seconds', 'total_marks'}, ...]
     """
 
     all_attempts = (
@@ -487,7 +559,6 @@ def attempt_history_view(request):
             q.marks for q in attempt.test.questions.all()
         )
 
-        # Per-attempt correct/wrong/skipped breakdown
         questions = attempt.test.questions.all()
         selected_map = {
             ans.question_id: ans.selected_answer
@@ -520,7 +591,6 @@ def attempt_history_view(request):
             ),
         })
 
-    # Chart datasets — chronological order (oldest first) for the trend line
     chart_entries = list(reversed(latest_per_test))
     chart_labels = [e['test'].title[:20] for e in chart_entries]
     chart_scores = [e['percentage'] for e in chart_entries]
@@ -528,7 +598,6 @@ def attempt_history_view(request):
     chart_wrong = [e['wrong'] for e in chart_entries]
     chart_skipped = [e['skipped'] for e in chart_entries]
 
-    # Aggregate summary
     total_tests = len(latest_per_test)
     avg_score = round(sum(chart_scores) / total_tests, 1) if total_tests else 0
     best_score = max(chart_scores) if chart_scores else 0

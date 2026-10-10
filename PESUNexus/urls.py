@@ -22,5 +22,6 @@ urlpatterns = [
     path('users/',include('users.urls')),
     path('',include('core.urls')),
     path('mocktests/',include('mocktests.urls')),
+    path('materials/', include('materials.lib_urls')),
     path('materials/', include('materials.urls')),
 ]

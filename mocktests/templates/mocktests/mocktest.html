@@ -66,6 +66,10 @@
 .form-group select option {
     background: #0e1420;
 }
+.form-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 .submit-btn {
     display: flex; align-items: center; justify-content: center; gap: 8px;
     width: 100%; padding: 13px 20px;
@@ -80,6 +84,12 @@
 .submit-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 0 24px rgba(62,229,176,0.4);
+}
+.submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 .tip-row {
     display: flex; align-items: flex-start; gap: 10px;
@@ -126,10 +136,11 @@
             <div class="form-group">
                 <label for="semester">Semester</label>
 
-                <select name="semester" id="semester">
-                    <option value="1">Semester 1</option>
-                    <option value="2">Semester 2</option>
-                    <option value="3">Semester 3</option>
+                <select name="semester" id="semester" required>
+                    <option value="">-- Select Semester --</option>
+                    {% for sem in semesters %}
+                        <option value="{{ sem }}">Semester {{ sem }}</option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -137,24 +148,12 @@
             <div class="form-group">
                 <label for="course">Course</label>
 
-                <select name="course" id="course">
-
-                    {% if courses %}
-                        {% for course in courses %}
-                            <option value="{{ course }}">
-                                {{ course }}
-                            </option>
-                        {% endfor %}
-                    {% else %}
-                        <option value="" disabled selected>
-                            No courses available
-                        </option>
-                    {% endif %}
-
+                <select name="course" id="course" disabled required>
+                    <option value="">-- Select Semester first --</option>
                 </select>
             </div>
 
-            <button type="submit" class="submit-btn">
+            <button type="submit" class="submit-btn" id="find-btn" disabled>
                 Find Tests →
             </button>
 
@@ -172,4 +171,69 @@
 
     </div>
 </div>
+
+{# Semester → courses mapping passed as safe JSON #}
+{{ courses_by_sem_json|json_script:"courses-by-sem" }}
+
+<script>
+(function () {
+    const mapping = JSON.parse(document.getElementById('courses-by-sem').textContent);
+
+    const semSelect = document.getElementById('semester');
+    const courseSelect = document.getElementById('course');
+    const findBtn = document.getElementById('find-btn');
+
+    function populateCourses() {
+        const sem = semSelect.value;
+
+        // Reset course dropdown
+        courseSelect.innerHTML = '';
+        courseSelect.disabled = true;
+        findBtn.disabled = true;
+
+        if (!sem) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = '-- Select Semester first --';
+            courseSelect.appendChild(opt);
+            return;
+        }
+
+        const courses = mapping[sem] || [];
+
+        if (courses.length === 0) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = 'No courses available for this semester';
+            courseSelect.appendChild(opt);
+            return;
+        }
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '-- Select Course --';
+        courseSelect.appendChild(placeholder);
+
+        courses.forEach(function (name) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            courseSelect.appendChild(opt);
+        });
+
+        courseSelect.disabled = false;
+    }
+
+    semSelect.addEventListener('change', populateCourses);
+
+    courseSelect.addEventListener('change', function () {
+        findBtn.disabled = !(semSelect.value && courseSelect.value);
+    });
+
+    // ⚡ Fire once on page load so a pre-selected semester populates the course dropdown
+    if (semSelect.value) {
+        populateCourses();
+    }
+})();
+</script>
 {% endblock %}

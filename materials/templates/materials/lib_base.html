@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Study Materials{% endblock %} - PESU Nexus</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #080b11;
+            color: #e8edf4;
+            font-family: Arial, Helvetica, sans-serif;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -300px;
+            right: -300px;
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, rgba(62, 229, 176, 0.08) 0%, rgba(62, 229, 176, 0.03) 35%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(20px);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -400px;
+            left: 200px;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, rgba(100, 130, 255, 0.05) 0%, rgba(100, 130, 255, 0.02) 40%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(30px);
+        }
+
+        #cursor-light {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 700px;
+            height: 700px;
+            pointer-events: none;
+            z-index: 1;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(62, 229, 176, 0.14) 0%, rgba(62, 229, 176, 0.06) 25%, rgba(62, 229, 176, 0.02) 45%, transparent 65%);
+            filter: blur(30px);
+            transform: translate(-50%, -50%);
+            transition: opacity 0.4s ease;
+            opacity: 0;
+            will-change: left, top;
+        }
+        body:hover #cursor-light { opacity: 1; }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 270px;
+            height: 100vh;
+            background: rgba(6, 9, 14, 0.78);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(62, 229, 176, 0.06);
+            padding: 30px 15px;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; padding: 0 15px; margin-bottom: 40px; }
+        .brand-logo {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 30px;
+            font-weight: 800;
+            color: #3ee5b0;
+            text-shadow: 0 0 20px rgba(62, 229, 176, 0.55);
+        }
+        .brand-name { font-size: 19px; font-weight: 700; color: #ffffff; }
+        .nav { display: flex; flex-direction: column; gap: 6px; }
+        .nav a {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            border-radius: 10px;
+            color: #8b95a5;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+        .nav a:hover {
+            background: rgba(62, 229, 176, 0.06);
+            color: #3ee5b0;
+            border-color: rgba(62, 229, 176, 0.12);
+        }
+        .nav a.active {
+            background: rgba(62, 229, 176, 0.10);
+            color: #3ee5b0;
+            border-left: 3px solid #3ee5b0;
+            border-top: 1px solid rgba(62, 229, 176, 0.15);
+            border-right: 1px solid rgba(62, 229, 176, 0.15);
+            border-bottom: 1px solid rgba(62, 229, 176, 0.15);
+            box-shadow: 0 0 24px rgba(62, 229, 176, 0.08);
+        }
+        .nav-icon { width: 32px; font-size: 18px; font-family: 'Consolas', 'Courier New', monospace; }
+        .sidebar-bottom { margin-top: auto; }
+        .profile-mini {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            border: 1px solid rgba(62, 229, 176, 0.08);
+            border-radius: 12px;
+            background: rgba(13, 18, 25, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: 0.2s;
+        }
+        .profile-mini:hover { border-color: rgba(62, 229, 176, 0.25); background: rgba(13, 18, 25, 0.85); }
+        .profile-mini img {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+            border: 1px solid rgba(62, 229, 176, 0.25);
+            box-shadow: 0 0 12px rgba(62, 229, 176, 0.1);
+        }
+        .profile-mini-info { overflow: hidden; }
+        .profile-mini-name { font-weight: 700; font-size: 14px; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .profile-mini-id { margin-top: 4px; font-size: 12px; color: #5a6472; }
+        .logout {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-radius: 9px;
+            color: #8b95a5;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .logout:hover { background: rgba(62, 229, 176, 0.06); color: #3ee5b0; }
+
+        /* ===== MAIN ===== */
+        .main { margin-left: 270px; min-height: 100vh; padding: 48px; position: relative; z-index: 2; }
+        .header { margin-bottom: 40px; }
+        .header h1 { margin: 0; font-size: 30px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
+        .header p { margin: 8px 0 0; font-size: 15px; color: #8b95a5; word-break: break-word; }
+
+        .section-title { font-size: 20px; font-weight: 700; margin: 0 0 20px; color: #ffffff; }
+        .section-count { color: #5a6472; font-size: 13px; font-weight: 400; font-family: 'Consolas', 'Courier New', monospace; margin-left: 10px; }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 40px;
+            padding: 12px 26px;
+            background: rgba(13, 18, 25, 0.55);
+            border: 1px solid rgba(62, 229, 176, 0.12);
+            color: #e8edf4;
+            text-decoration: none;
+            border-radius: 999px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .back-btn:hover { border-color: #3ee5b0; color: #3ee5b0; box-shadow: 0 0 20px rgba(62, 229, 176, 0.15); }
+
+        .empty {
+            padding: 60px 40px;
+            background: rgba(13, 18, 25, 0.5);
+            border: 1px dashed rgba(62, 229, 176, 0.15);
+            border-radius: 16px;
+            text-align: center;
+            color: #8b95a5;
+        }
+
+        footer {
+            margin-top: 90px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(62, 229, 176, 0.06);
+            text-align: center;
+            color: #5a6472;
+            font-size: 13px;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        @media (max-width: 750px) {
+            .sidebar { position: relative; width: 100%; height: auto; }
+            .main { margin-left: 0; padding: 25px; }
+            #cursor-light { display: none; }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<div id="cursor-light"></div>
+
+<aside class="sidebar">
+    <div class="brand">
+        <div class="brand-logo">P</div>
+        <div class="brand-name">PESU Nexus</div>
+    </div>
+
+    <nav class="nav">
+        <a href="{% url 'core:home' %}"><span class="nav-icon">&#8962;</span> Dashboard</a>
+        <a href="{% url 'mocktests:mock_tests' %}"><span class="nav-icon">&#9635;</span> Mock Tests</a>
+        <a href="{% url 'mocktests:attempt_history' %}"><span class="nav-icon">&#9637;</span> Test Analysis</a>
+        <a href="{% url 'materials:semester_list' %}" class="active"><span class="nav-icon">&#9636;</span> Materials</a>
+        {% url 'nexuspro:chat' as nexuspro_url %}{% if nexuspro_url %}<a href="{{ nexuspro_url }}"><span class="nav-icon">&#9672;</span> NexusPro</a>{% endif %}
+    </nav>
+
+    <div class="sidebar-bottom">
+        <div class="profile-mini">
+            <img src="{% static 'images/flower_photo.jpg' %}" alt="Profile photo">
+            <div class="profile-mini-info">
+                <div class="profile-mini-name">{{ user.username }}</div>
+                <div class="profile-mini-id">{{ user.email }}</div>
+            </div>
+        </div>
+        <form method="post" action="{% url 'users:logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="logout">&#8677; &nbsp;&nbsp; Logout</button>
+        </form>
+    </div>
+</aside>
+
+<main class="main">
+    {% block content %}{% endblock %}
+    <footer>&copy; 2026 PESU NEXUS</footer>
+</main>
+
+<script>
+    (function () {
+        const light = document.getElementById('cursor-light');
+        if (!light) return;
+        if (window.matchMedia('(max-width: 750px)').matches) { light.style.display = 'none'; return; }
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        let currentX = mouseX, currentY = mouseY;
+        document.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+        function animate() {
+            currentX += (mouseX - currentX) * 0.12;
+            currentY += (mouseY - currentY) * 0.12;
+            light.style.left = currentX + 'px';
+            light.style.top = currentY + 'px';
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+</script>
+</body>
+</html>
