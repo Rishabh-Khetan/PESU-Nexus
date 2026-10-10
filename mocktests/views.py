@@ -1,6 +1,7 @@
 import json
 from datetime import timedelta
 
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -39,7 +40,6 @@ def mocktest_view(request):
     )
 
     # Build mapping: { 1: ["B.Tech CSE", "B.Tech ECE"], 2: [...] }
-    # NOTE: keys are ints here; json_script will serialize them as strings automatically
     courses_by_sem = {}
     for sem in semesters:
         courses_by_sem[sem] = list(
@@ -50,7 +50,6 @@ def mocktest_view(request):
             .order_by('course_name')
         )
 
-    # Fallback: all courses (in case template wants them for default state)
     all_courses = list(
         Mock_Test.objects
         .values_list('course_name', flat=True)
@@ -196,29 +195,73 @@ def submit_test_view(request):
                 status=400
             )
 
-    score = 0
+    # ============================================================
+    # FAST PATH — batch all DB operations into ~4 queries
+    # ============================================================
 
-    for question_id, selected_answer in answers.items():
+    # 1. Parse question IDs once
+    question_ids = []
+    for qid in answers.keys():
         try:
-            question = Question.objects.get(
-                id=question_id,
-                test=attempt.test
-            )
-        except Question.DoesNotExist:
+            question_ids.append(int(qid))
+        except (TypeError, ValueError):
             continue
 
-        Answer.objects.update_or_create(
-            attempt=attempt,
-            question=question,
-            defaults={'selected_answer': selected_answer}
-        )
+    # 2. Fetch all needed questions in ONE query
+    questions_by_id = Question.objects.filter(
+        id__in=question_ids,
+        test=attempt.test
+    ).in_bulk()
+
+    # 3. Fetch existing answers for this attempt in ONE query
+    existing_answers = {
+        ans.question_id: ans
+        for ans in Answer.objects.filter(attempt=attempt)
+    }
+
+    # 4. Build create/update lists and compute score in memory
+    to_create = []
+    to_update = []
+    score = 0
+
+    for question_id_str, selected_answer in answers.items():
+        try:
+            qid = int(question_id_str)
+        except (TypeError, ValueError):
+            continue
+
+        question = questions_by_id.get(qid)
+        if question is None:
+            continue
 
         if selected_answer.lower() == question.correct_answer.lower():
             score += question.marks
 
-    attempt.score = score
-    attempt.completed_at = now
-    attempt.save()
+        existing = existing_answers.get(qid)
+        if existing is not None:
+            existing.selected_answer = selected_answer
+            to_update.append(existing)
+        else:
+            to_create.append(Answer(
+                attempt=attempt,
+                question=question,
+                selected_answer=selected_answer,
+            ))
+
+    # 5. Write everything in ONE transaction (batched)
+    with transaction.atomic():
+        if to_create:
+            Answer.objects.bulk_create(to_create, batch_size=500)
+        if to_update:
+            Answer.objects.bulk_update(
+                to_update,
+                ['selected_answer'],
+                batch_size=500,
+            )
+
+        attempt.score = score
+        attempt.completed_at = now
+        attempt.save(update_fields=['score', 'completed_at'])
 
     expired = now >= deadline
 
